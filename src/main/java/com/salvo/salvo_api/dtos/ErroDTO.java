@@ -1,4 +1,4 @@
-package com.salvo.salvo_api.entities;
+package com.salvo.salvo_api.dtos;
 
 import java.time.OffsetDateTime;
 import java.util.List;

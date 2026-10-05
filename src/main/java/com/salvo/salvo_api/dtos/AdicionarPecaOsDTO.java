@@ -1,4 +1,14 @@
 package com.salvo.salvo_api.dtos;
 
-public interface AdicionarPecaOsDTO {
-}
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import java.math.BigDecimal;
+
+public record AdicionarPecaOsDTO(
+    Long pecaId,
+    @NotBlank(message = "Descrição é obrigatória") String descricao,
+    @NotNull @Positive BigDecimal quantidade,
+    @NotNull @PositiveOrZero BigDecimal valorUnitario
+) {}

@@ -1,4 +1,9 @@
 package com.salvo.salvo_api.dtos;
 
-public class AtualizarClienteDTO {
-}
+public record AtualizarClienteDTO (
+      String nome,
+      String email,
+      String telefone,
+      String telefoneSecundario,
+      String classificacao
+){}
