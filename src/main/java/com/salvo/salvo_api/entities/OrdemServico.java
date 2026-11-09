@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "ordens_servico")
@@ -57,7 +59,8 @@ public class OrdemServico {
     // @Enumerated(STRING) diz ao Hibernate para gravar/ler como String,
     // e o driver JDBC do PostgreSQL faz a conversão com o tipo nativo.
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "prioridade_os")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false)
     private PrioridadeOs prioridade = PrioridadeOs.NORMAL;
 
     @Column(name = "km_entrada")
