@@ -1,6 +1,7 @@
 package com.salvo.salvo_api.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.salvo.salvo_api.dtos.LoginRequestDTO;
 import com.salvo.salvo_api.dtos.LoginResponseDTO;
 import com.salvo.salvo_api.dtos.RegistrarOficinaDTO;
@@ -27,6 +28,7 @@ public class AuthService {
     private final String anonKey;
     private final OficinaRepository oficinaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public AuthService(
             @Value("${salvo.security.supabase.auth-url:https://gkgnfxkbwexpihqybcue.supabase.co/auth/v1}") String authUrl,
@@ -81,7 +83,7 @@ public class AuthService {
 
         JsonNode signupResponse;
         try {
-            signupResponse = restClient.post()
+            String rawJson = restClient.post()
                     .uri(authUrl + "/signup")
                     .header("apikey", anonKey)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -91,17 +93,18 @@ public class AuthService {
                             "data", Map.of("nome", dto.nomeUsuario())
                     ))
                     .retrieve()
-                    .body(JsonNode.class);
+                    .body(String.class);
+
+            if (rawJson == null || rawJson.isBlank()) {
+                throw new RegraDeNegocioException("Não foi possível obter resposta do Supabase Auth.");
+            }
+            signupResponse = objectMapper.readTree(rawJson);
         } catch (RestClientResponseException ex) {
             throw new RegraDeNegocioException(
-                "Erro ao cadastrar usuário no Supabase: " + ex.getResponseBodyAsString()
+                "Erro ao cadastrar usuário no Supabase (" + ex.getStatusCode() + "): " + ex.getResponseBodyAsString()
             );
         } catch (Exception ex) {
             throw new RegraDeNegocioException("Erro ao conectar ao Supabase Auth: " + ex.getMessage());
-        }
-
-        if (signupResponse == null) {
-            throw new RegraDeNegocioException("Não foi possível obter resposta do Supabase Auth.");
         }
 
         String authUserIdStr = null;
