@@ -11,7 +11,10 @@ import java.util.Optional;
 
 public interface OrdemServicoRepository extends JpaRepository<OrdemServico, Long> {
 
-    @EntityGraph(attributePaths = {"cliente", "veiculo", "status", "servicos", "pecas"})
+    // As coleções servicos/pecas são carregadas sob demanda dentro da transação.
+    // Fazer fetch join das duas ao mesmo tempo causa MultipleBagFetchException,
+    // pois ambas são List (bag) na entidade OrdemServico.
+    @EntityGraph(attributePaths = {"cliente", "veiculo", "status"})
     Optional<OrdemServico> findByOficinaIdAndNumero(Long oficinaId, Integer numero);
 
     @EntityGraph(attributePaths = {"cliente", "veiculo", "status"})
