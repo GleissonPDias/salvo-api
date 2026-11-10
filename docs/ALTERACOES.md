@@ -1,0 +1,274 @@
+# Changelog — Salvô API
+
+Registro das alterações feitas nesta entrega (integração do front-end + V4 multi-oficina).
+
+**Commit:** `3f1712a feat(saas): V4 multi-oficina com cadastro, edicao de OS e catalogo`
+
+---
+
+## Resumo
+
+Esta entrega transforma a API em um back-end **SaaS multi-oficina** e fecha lacunas que impediam o front-end de operar sem overlays locais. A mudança de schema está concentrada em uma única migração nova (`V4`), sem editar V1–V3.
+
+Principais frentes:
+
+1. Cadastro de oficina (`POST /auth/registrar`).
+2. Multi-oficina em veículos e tabelas novas.
+3. Edição de OS (cabeçalho e itens).
+4. Catálogo de serviços/peças com CRUD, soft-delete e peças sugeridas.
+5. Estoque com movimentações persistentes e custo médio.
+6. Financeiro, agenda, notificações, fornecedores, pedidos de compra e vistoria.
+7. Endurecimento da migração e correções de bugs encontrados na validação.
+
+---
+
+## 1. Autenticação e cadastro
+
+### Adicionado
+
+- `POST /auth/registrar` (`RegistrarOficinaDTO`):
+  - valida e-mail e CNPJ duplicados;
+  - cria identidade no Supabase Auth (`/signup`);
+  - cria oficina, usuário `ADMIN` e checklist padrão com 12 itens;
+  - retorna tokens quando o Supabase devolve sessão.
+- `RegistroService` e integração de signup no `AuthService`.
+- Tratamento de respostas do Supabase com e sem confirmação de e-mail.
+
+### Ajustado
+
+- `AuthService` agora diferencia falha de credenciais, e-mail já cadastrado e indisponibilidade do Supabase.
+- `SecurityConfig` libera `POST /auth/login` e `POST /auth/registrar`.
+
+---
+
+## 2. Multi-oficina
+
+### Schema (V4)
+
+- `veiculos.oficina_id` com backfill, FK, índice e `not null`.
+- Trigger `trg_veiculos_oficina` para manter o vínculo mesmo com código legado.
+- Remoção da unicidade global de placa/chassi; criação de índices únicos por oficina.
+- `oficinas.uf` normalizada para `varchar(2)`.
+
+### Código
+
+- `OficinaContexto` resolve usuário/oficina a partir do `sub` do JWT.
+- Repositórios e serviços filtram por `oficina_id`.
+- `Veiculo` passa a mapear `oficinaId`.
+- Conflitos de unicidade traduzidos para mensagens claras no `GlobalExceptionHandler`.
+
+---
+
+## 3. Ordens de serviço
+
+### Adicionado
+
+- `PUT /ordens-servico/{numero}` — edição do cabeçalho (box, mecânico, prioridade, km, diagnóstico, observações, previsão, combustível, desconto, pagamento, garantia, aprovação e cancelamento).
+- `PUT /ordens-servico/{numero}/servicos/{id}` — edição de serviço da OS.
+- `PUT /ordens-servico/{numero}/pecas/{id}` — edição de peça da OS.
+- `GET /ordens-servico/{numero}/historico`.
+- Campos novos de OS na V4 e nos DTOs (`OrdemServicoDTO`, `OrdemServicoResumoDTO`, `CriarOsDTO`, `AtualizarOsDTO`).
+- Efeitos automáticos de `pronta_em`, `entregue_em`, `cancelada_em` e `fechada_em` na mudança de status.
+
+### Ajustado
+
+- Status `PRONTA` (ordem 8) e `ENTREGUE` (ordem 10) separados.
+- `CONCLUIDA` permanece como legado inativo (ordem 9).
+- `OrdemServicoService` valida pertencimento de cliente/veículo/box/mecânico à oficina.
+
+### Limitação resolvida
+
+Antes, o front precisava **excluir e recriar** itens para alterar quantidade, valor, horas ou responsável. Agora existem endpoints de `PUT` para serviços e peças, mantendo o `id` do item.
+
+---
+
+## 4. Catálogo de serviços e peças
+
+### Adicionado
+
+- CRUD completo de serviços:
+  - `POST /servicos`
+  - `PUT /servicos/{id}`
+  - `DELETE /servicos/{id}` (soft-delete)
+- CRUD completo de peças:
+  - `POST /pecas`
+  - `PUT /pecas/{id}`
+  - `DELETE /pecas/{id}` (soft-delete)
+- Geração automática de código (`SV-001`, `PC-001`) quando omitido.
+- Peças sugeridas por serviço:
+  - `GET /servicos/{id}/pecas-sugeridas`
+  - `PUT /servicos/{id}/pecas-sugeridas`
+  - tabela `servico_pecas_sugeridas`.
+- Busca por texto (`q`) em serviços e peças.
+- `GET /mecanicos` para alimentar filtros e seleção de responsável.
+
+### Limitação resolvida
+
+O front antes mantinha serviços/peças criados apenas no navegador e precisava simular exclusão. Agora o catálogo é persistido na API, e a exclusão é lógica (`ativo=false`), preservando histórico de OS.
+
+---
+
+## 5. Estoque
+
+### Adicionado
+
+- `POST /pecas/{id}/movimentacoes` com tipos `entrada`, `saida`, `ajuste` e `devolucao`.
+- `GET /pecas/{id}/movimentacoes?limite=`.
+- `GET /estoque/movimentacoes?limite=`.
+- `fornecedores` e vínculo `pecas.fornecedor_id`.
+- Coluna gerada `estoque_disponivel`.
+- Trigger `trg_estoque_movimentacoes_aplica`.
+- Custo médio ponderado em entradas com custo.
+
+### Regras
+
+- `entrada`/`devolucao` somam; `saida` subtrai; `ajuste` recebe a **nova contagem física**.
+- Saldo negativo é rejeitado pelo banco.
+- A peça é travada com `SELECT ... FOR UPDATE`.
+- A movimentação valida que a peça pertence à oficina.
+
+### Limitação resolvida
+
+Movimentações e baixa de peças deixaram de ser apenas overlay local. O saldo agora é uma verdade única no banco, com histórico auditável.
+
+---
+
+## 6. Vistoria de entrada
+
+### Adicionado
+
+- `GET /ordens-servico/{numero}/vistoria`
+- `PUT /ordens-servico/{numero}/vistoria`
+- Tabelas `os_vistorias`, `os_vistoria_danos` e `os_vistoria_fotos`.
+- `OsVistoriaDTO`, `RegistrarVistoriaDTO`, `VistoriaDanoDTO` e `VistoriaFotoDTO`.
+
+Regras: uma vistoria por OS; dano único por área + tipo; URL de foto obrigatória.
+
+---
+
+## 7. Fornecedores e pedidos de compra
+
+### Adicionado
+
+- CRUD de fornecedores (`/fornecedores`).
+- CRUD de pedidos de compra (`/pedidos-compra`), com status `RASCUNHO`, `ENVIADO`, `RECEBIDO` e `CANCELADO`.
+- Numeração sequencial por oficina via `fn_proximo_numero_pedido_compra`.
+- Recebimento que dá entrada automática das quantidades pendentes no estoque, usando o custo do item.
+- Bloqueio de edição/exclusão em estados finais.
+
+---
+
+## 8. Financeiro
+
+### Adicionado
+
+- Pagamentos (contas a receber):
+  - `GET/POST/PUT/PATCH/DELETE /pagamentos`
+  - status `PENDENTE`, `PAGO`, `CANCELADO`, `ESTORNADO`.
+- Despesas (contas a pagar):
+  - `GET/POST/PUT/PATCH/DELETE /despesas`
+  - status `PENDENTE`, `PAGO`, `CANCELADO`.
+- Vínculos com OS, orçamento, cliente e fornecedor.
+
+---
+
+## 9. Agenda
+
+### Adicionado
+
+- `GET/POST/PUT/PATCH/DELETE /agendamentos`.
+- Filtro por `status`, `inicio` e `fim`.
+- Status `AGENDADO`, `CONFIRMADO`, `EM_ANDAMENTO`, `CONCLUIDO`, `CANCELADO`, `NAO_COMPARECEU`.
+- Validação `fim > inicio`.
+
+---
+
+## 10. Notificações
+
+### Adicionado
+
+- `GET /notificacoes`
+- `GET /notificacoes/nao-lidas/contador`
+- `POST /notificacoes`
+- `PATCH /notificacoes/{id}/lida`
+- `PATCH /notificacoes/lidas`
+- `DELETE /notificacoes/{id}`
+
+---
+
+## 11. Bugs e problemas encontrados na validação
+
+### Corrigido — deadlock de RLS na V4
+
+**Sintoma:** a migração travava ao habilitar RLS.
+**Causa:** o loop incluía `flyway_schema_history`, que já estava travada pelo advisory lock do Flyway; o `ALTER TABLE` criava deadlock.
+**Correção:** o loop ignora `flyway_schema_history`.
+
+### Corrigido — `oficinas.uf` incompatível com `ddl-auto=validate`
+
+**Sintoma:** Hibernate falhava na validação do schema.
+**Causa:** coluna `varchar(3)` no banco e `@Column(length = 2)` na entidade.
+**Correção:** V4 normaliza `uf` para `varchar(2)` e a entidade declara `length = 2`.
+
+### Corrigido — saldo de estoque sobrescrito pelo Hibernate
+
+**Sintoma:** a movimentação era inserida, o trigger atualizava o saldo, mas o valor voltava ao anterior.
+**Causa:** a entidade `Peca` gerenciada ainda tinha o saldo antigo; um `save` posterior sobrescrevia o trigger.
+**Correção:** o serviço faz `flush` + `refresh` e atualiza **somente** `preco_custo` via SQL nativo.
+
+### Corrigido — leitura de enums nativos
+
+**Sintoma:** risco de falha ao gravar `estoque_movimentacoes.tipo` em bancos cujo tipo é enum nativo.
+**Correção:** `CatalogoService` descobre o tipo da coluna e resolve o rótulo do enum dinamicamente, funcionando com enum ou `varchar`.
+
+### Encontrado — V2 falha em banco criado do zero
+
+**Sintoma:** `cannot drop type tipo_orcamento_item because other objects depend on it`.
+**Situação:** a V2 versionada não é compatível com banco vazio. Não foi alterada porque bancos de produção já a aplicaram.
+**Contorno:** validação local usa uma cópia corrigida fora do repositório. Ver [BANCO-E-MIGRACOES.md](BANCO-E-MIGRACOES.md).
+
+### Encontrado — unicidade global de placa/chassi
+
+**Sintoma:** duas oficinas não podiam cadastrar o mesmo veículo.
+**Correção:** V4 remove a unicidade global e cria índices por oficina, com normalização de placa e chassi. Se houver duplicidade legada, o índice não é criado e a migração avisa.
+
+---
+
+## 12. Validação executada
+
+- Banco PostgreSQL 17.11 limpo.
+- Flyway aplicou V1→V4 em ~0,7 s.
+- `Started SalvoApiApplication` sem erros.
+- `ddl-auto=validate` passou.
+- Testes de banco com rollback:
+  - trigger de estoque (entrada/saída/ajuste);
+  - rejeição de saldo negativo;
+  - `estoque_disponivel`;
+  - numeração sequencial de pedido;
+  - RLS e policy;
+  - tipo de `oficinas.uf`.
+- Endpoints principais exercitados contra dados reais de teste (1 cliente, 1 veículo, 1 OS), sem criar registros permanentes.
+
+---
+
+## 13. Compatibilidade e ordem de deploy
+
+- As mudanças de schema são aditivas; o código antigo continua funcionando durante a transição.
+- **Deploy do back-end primeiro**, depois o front-end que usa os campos/endpoints novos.
+- Migrações não devem ser rodadas manualmente no Supabase; o Flyway aplica no start.
+- Nenhuma migração aplicada (V1–V3) foi editada.
+
+---
+
+## 14. O que ainda não tem tela no front
+
+Os endpoints abaixo existem e estão documentados, mas o front ainda não tem páginas dedicadas:
+
+- fornecedores;
+- pedidos de compra;
+- financeiro (pagamentos/despesas);
+- agenda;
+- notificações;
+- vistoria persistida (a tela existe, mas ainda usa parte do overlay local).
+
+Isso está registrado também no changelog do front (`pi05/docs/ALTERACOES.md`).
