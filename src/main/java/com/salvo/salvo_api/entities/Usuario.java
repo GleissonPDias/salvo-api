@@ -32,6 +32,22 @@ public class Usuario {
     @Column(nullable = false)
     private String cargo;
 
+    private String telefone;
+
+    private String especialidades;
+
+    @Column(nullable = false)
+    private Boolean lider = false;
+
+    @Column(name = "comissao_percentual", nullable = false)
+    private java.math.BigDecimal comissaoPercentual = java.math.BigDecimal.ZERO;
+
+    @Column(name = "cor_agenda", length = 7)
+    private String corAgenda;
+
+    @Column(name = "foto_url", columnDefinition = "text")
+    private String fotoUrl;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 

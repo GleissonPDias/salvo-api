@@ -72,8 +72,38 @@ public class OrdemServico {
     @Column(columnDefinition = "text")
     private String observacoes;
 
+    private String tipo;
+
+    private String canal;
+
+    private String titulo;
+
+    @Column(name = "relato_cliente", columnDefinition = "text")
+    private String relatoCliente;
+
+    @Column(name = "observacoes_internas", columnDefinition = "text")
+    private String observacoesInternas;
+
+    @Column(name = "observacoes_cliente", columnDefinition = "text")
+    private String observacoesCliente;
+
+    @Column(name = "previsao_entrega")
+    private OffsetDateTime previsaoEntrega;
+
+    @Column(name = "nivel_combustivel")
+    private Short nivelCombustivel;
+
     @Column(nullable = false)
     private BigDecimal desconto = BigDecimal.ZERO;
+
+    @Column(name = "desconto_tipo", nullable = false)
+    private String descontoTipo = "VALOR";
+
+    @Column(name = "km_saida")
+    private Integer kmSaida;
+
+    @Column(name = "diagnostico_validado", nullable = false)
+    private Boolean diagnosticoValidado = false;
 
     @Column(name = "garantia_dias")
     private Integer garantiaDias;
@@ -81,11 +111,51 @@ public class OrdemServico {
     @Column(name = "garantia_km")
     private Integer garantiaKm;
 
+    @Column(name = "garantia_tipo")
+    private String garantiaTipo;
+
+    @Column(name = "forma_pagamento")
+    private String formaPagamento;
+
+    @Column(nullable = false)
+    private Short parcelas = 1;
+
+    @Column(name = "aprovacao_status")
+    private String aprovacaoStatus;
+
+    @Column(name = "aprovacao_canal")
+    private String aprovacaoCanal;
+
+    @Column(name = "aprovacao_enviada_em")
+    private OffsetDateTime aprovacaoEnviadaEm;
+
+    @Column(name = "aprovacao_decidida_em")
+    private OffsetDateTime aprovacaoDecididaEm;
+
+    @Column(name = "aprovacao_visualizada_em")
+    private OffsetDateTime aprovacaoVisualizadaEm;
+
     @Column(name = "aberta_em", nullable = false, updatable = false)
     private OffsetDateTime abertaEm;
 
+    @Column(name = "pronta_em")
+    private OffsetDateTime prontaEm;
+
+    @Column(name = "entregue_em")
+    private OffsetDateTime entregueEm;
+
+    @Column(name = "cancelada_em")
+    private OffsetDateTime canceladaEm;
+
+    @Column(name = "motivo_cancelamento", columnDefinition = "text")
+    private String motivoCancelamento;
+
     @Column(name = "fechada_em")
     private OffsetDateTime fechadaEm;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "atualizado_por")
+    private Usuario atualizadoPor;
 
     @Column(name = "criado_em", nullable = false, updatable = false)
     private OffsetDateTime criadoEm;
@@ -106,6 +176,11 @@ public class OrdemServico {
     private void prePersist() {
         abertaEm = OffsetDateTime.now();
         criadoEm = OffsetDateTime.now();
+        atualizadoEm = OffsetDateTime.now();
+    }
+
+    @PreUpdate
+    private void preUpdate() {
         atualizadoEm = OffsetDateTime.now();
     }
 }

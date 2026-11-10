@@ -55,6 +55,15 @@ public class OrdemServicoController {
         return osService.alterarStatus(numero, dto);
     }
 
+    @PutMapping("/{numero}")
+    @Operation(summary = "Atualiza os campos do cabeçalho da OS")
+    public OrdemServicoDTO atualizar(
+        @PathVariable Integer numero,
+        @RequestBody @Valid AtualizarOsDTO dto
+    ) {
+        return osService.atualizar(numero, dto);
+    }
+
     @GetMapping("/{numero}/historico")
     @Operation(summary = "Lista o histórico de alterações de status da OS")
     public List<OsHistoricoDTO> historico(@PathVariable Integer numero) {
@@ -78,6 +87,16 @@ public class OrdemServicoController {
         osService.removerServico(numero, id);
     }
 
+    @PutMapping("/{numero}/servicos/{id}")
+    @Operation(summary = "Atualiza um serviço da OS")
+    public OsServicoDTO atualizarServico(
+        @PathVariable Integer numero,
+        @PathVariable Long id,
+        @RequestBody @Valid AtualizarOsServicoDTO dto
+    ) {
+        return osService.atualizarServico(numero, id, dto);
+    }
+
     @PostMapping("/{numero}/pecas")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Adiciona uma peça à OS")
@@ -93,5 +112,15 @@ public class OrdemServicoController {
     @Operation(summary = "Remove uma peça da OS")
     public void removerPeca(@PathVariable Integer numero, @PathVariable Long id) {
         osService.removerPeca(numero, id);
+    }
+
+    @PutMapping("/{numero}/pecas/{id}")
+    @Operation(summary = "Atualiza uma peça da OS")
+    public OsPecaDTO atualizarPeca(
+        @PathVariable Integer numero,
+        @PathVariable Long id,
+        @RequestBody @Valid AtualizarOsPecaDTO dto
+    ) {
+        return osService.atualizarPeca(numero, id, dto);
     }
 }

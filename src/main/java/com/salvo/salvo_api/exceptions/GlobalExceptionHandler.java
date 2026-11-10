@@ -50,11 +50,40 @@ public class GlobalExceptionHandler {
         if (causa != null && causa.contains("ux_clientes_oficina_cpf_cnpj")) {
             return new ErroDTO("CONFLITO", "CPF/CNPJ já cadastrado nesta oficina");
         }
-        if (causa != null && causa.contains("veiculos_placa_key")) {
-            return new ErroDTO("CONFLITO", "Placa já cadastrada no sistema");
+        if (causa != null && (causa.contains("veiculos_placa_key")
+                || causa.contains("ux_veiculos_oficina_placa"))) {
+            return new ErroDTO("CONFLITO", "Placa já cadastrada nesta oficina");
         }
-        if (causa != null && causa.contains("veiculos_chassi_key")) {
-            return new ErroDTO("CONFLITO", "Chassi já cadastrado no sistema");
+        if (causa != null && (causa.contains("veiculos_chassi_key")
+                || causa.contains("ux_veiculos_oficina_chassi"))) {
+            return new ErroDTO("CONFLITO", "Chassi já cadastrado nesta oficina");
+        }
+        if (causa != null && causa.contains("ux_usuarios_email")) {
+            return new ErroDTO("CONFLITO", "E-mail já cadastrado");
+        }
+        if (causa != null && causa.contains("ux_pecas_oficina_codigo")) {
+            return new ErroDTO("CONFLITO", "Código de peça já cadastrado nesta oficina");
+        }
+        if (causa != null && causa.contains("ux_servicos_oficina_codigo")) {
+            return new ErroDTO("CONFLITO", "Código de serviço já cadastrado nesta oficina");
+        }
+        if (causa != null && causa.contains("ux_boxes_oficina_nome")) {
+            return new ErroDTO("CONFLITO", "Box já cadastrado nesta oficina");
+        }
+        if (causa != null && causa.contains("ux_fornecedores_oficina_nome")) {
+            return new ErroDTO("CONFLITO", "Fornecedor com este nome já cadastrado nesta oficina");
+        }
+        if (causa != null && causa.contains("ux_fornecedores_oficina_cnpj")) {
+            return new ErroDTO("CONFLITO", "CNPJ de fornecedor já cadastrado nesta oficina");
+        }
+        if (causa != null && causa.contains("ux_pedidos_compra_oficina_numero")) {
+            return new ErroDTO("CONFLITO", "Número de pedido de compra já usado nesta oficina");
+        }
+        if (causa != null && causa.contains("ux_os_vistorias_os")) {
+            return new ErroDTO("CONFLITO", "Esta OS já possui uma vistoria registrada");
+        }
+        if (causa != null && causa.contains("ux_os_vistoria_danos_area_tipo")) {
+            return new ErroDTO("CONFLITO", "Dano já registrado para esta área e tipo de avaria");
         }
         return new ErroDTO("CONFLITO", "Dado duplicado");
     }

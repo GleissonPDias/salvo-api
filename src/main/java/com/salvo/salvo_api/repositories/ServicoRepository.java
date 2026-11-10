@@ -9,9 +9,13 @@ import java.util.Optional;
 
 public interface ServicoRepository extends JpaRepository<Servico, Long> {
 
-    @Query("SELECT s FROM Servico s WHERE s.oficina.id = :oficina AND s.ativo = true " +
-        "AND LOWER(s.nome) LIKE LOWER(CONCAT('%', :q, '%'))")
+    @Query("SELECT s FROM Servico s WHERE s.oficina.id = :oficina " +
+        "AND (LOWER(s.nome) LIKE LOWER(CONCAT('%', :q, '%')) " +
+        "OR LOWER(s.codigo) LIKE LOWER(CONCAT('%', :q, '%'))) " +
+        "ORDER BY s.codigo")
     List<Servico> buscar(Long oficina, String q);
+
+    List<Servico> findByOficinaIdOrderByCodigo(Long oficinaId);
 
     Optional<Servico> findByIdAndOficinaId(Long id, Long oficinaId);
 }

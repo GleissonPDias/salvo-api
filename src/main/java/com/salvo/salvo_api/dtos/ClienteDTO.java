@@ -11,6 +11,9 @@ public record ClienteDTO(
     String telefone,
     String telefoneSecundario,
     String classificacao,
+    Boolean whatsapp,
+    Boolean aceitaComunicacoes,
+    String observacoes,
     Boolean ativo,
     OffsetDateTime criadoEm
 ) {
@@ -18,7 +21,8 @@ public record ClienteDTO(
         return new ClienteDTO(
             c.getId(), c.getNome(), c.getCpfCnpj(),
             c.getEmail(), c.getTelefone(), c.getTelefoneSecundario(),
-            c.getClassificacao(), c.getAtivo(), c.getCriadoEm()
+            c.getClassificacao(), c.getWhatsapp(), c.getAceitaComunicacoes(),
+            c.getObservacoes(), c.getAtivo(), c.getCriadoEm()
         );
     }
 }

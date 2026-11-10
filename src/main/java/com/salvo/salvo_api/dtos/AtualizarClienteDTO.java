@@ -5,5 +5,8 @@ public record AtualizarClienteDTO (
       String email,
       String telefone,
       String telefoneSecundario,
-      String classificacao
+      String classificacao,
+      Boolean whatsapp,
+      Boolean aceitaComunicacoes,
+      String observacoes
 ){}

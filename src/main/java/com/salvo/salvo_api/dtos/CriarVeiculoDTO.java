@@ -13,5 +13,8 @@ public record CriarVeiculoDTO(
     String combustivel,
     String motorizacao,
     String transmissao,
-    Integer kmAtual
+    Integer kmAtual,
+    String fotoUrl,
+    String categoria,
+    Boolean rascunho
 ) {}

@@ -30,6 +30,16 @@ public class Peca {
 
     private String fabricante;
 
+    private String oem;
+
+    private String categoria;
+
+    @Column(columnDefinition = "text")
+    private String aplicacao;
+
+    @Column(nullable = false)
+    private String unidade = "un";
+
     @Column(name = "preco_custo", nullable = false)
     private BigDecimal precoCusto = BigDecimal.ZERO;
 
@@ -41,6 +51,31 @@ public class Peca {
 
     @Column(name = "estoque_minimo", nullable = false)
     private BigDecimal estoqueMinimo = BigDecimal.ZERO;
+
+    @Column(name = "estoque_maximo", nullable = false)
+    private BigDecimal estoqueMaximo = BigDecimal.ZERO;
+
+    @Column(name = "estoque_reservado", nullable = false)
+    private BigDecimal estoqueReservado = BigDecimal.ZERO;
+
+    @Column(name = "estoque_disponivel", insertable = false, updatable = false)
+    private BigDecimal estoqueDisponivel;
+
+    private String localizacao;
+
+    @Column(name = "fornecedor_id")
+    private Long fornecedorId;
+
+    @Column(columnDefinition = "text")
+    private String observacao;
+
+    @Column(name = "codigo_barras")
+    private String codigoBarras;
+
+    @Column(name = "garantia_dias")
+    private Integer garantiaDias;
+
+    private String ncm;
 
     @Column(nullable = false)
     private Boolean ativo = true;

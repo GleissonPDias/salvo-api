@@ -1,6 +1,7 @@
 package com.salvo.salvo_api.dtos;
 
 import com.salvo.salvo_api.entities.Usuario;
+import java.math.BigDecimal;
 
 public record UsuarioLogadoDTO(
     Long id,
@@ -8,7 +9,13 @@ public record UsuarioLogadoDTO(
     String oficinaNome,
     String nome,
     String email,
-    String cargo
+    String cargo,
+    String telefone,
+    String especialidades,
+    Boolean lider,
+    BigDecimal comissaoPercentual,
+    String corAgenda,
+    String fotoUrl
 ) {
     public static UsuarioLogadoDTO from(Usuario u) {
         return new UsuarioLogadoDTO(
@@ -17,7 +24,13 @@ public record UsuarioLogadoDTO(
             u.getOficina().getNome(),
             u.getNome(),
             u.getEmail(),
-            u.getCargo()
+            u.getCargo(),
+            u.getTelefone(),
+            u.getEspecialidades(),
+            u.getLider(),
+            u.getComissaoPercentual(),
+            u.getCorAgenda(),
+            u.getFotoUrl()
         );
     }
 }

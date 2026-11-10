@@ -2,6 +2,7 @@ package com.salvo.salvo_api.dtos;
 
 import com.salvo.salvo_api.entities.OsServico;
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 public record OsServicoDTO(
     Long id,
@@ -12,7 +13,11 @@ public record OsServicoDTO(
     BigDecimal quantidade,
     BigDecimal valorUnitario,
     BigDecimal subtotal,
-    BigDecimal tempoEstimadoHoras
+    BigDecimal tempoEstimadoHoras,
+    Boolean concluido,
+    OffsetDateTime concluidoEm,
+    BigDecimal desconto,
+    String descontoTipo
 ) {
     public static OsServicoDTO from(OsServico s) {
         return new OsServicoDTO(
@@ -24,7 +29,11 @@ public record OsServicoDTO(
             s.getQuantidade(),
             s.getValorUnitario(),
             s.getQuantidade().multiply(s.getValorUnitario()),
-            s.getTempoEstimadoHoras()
+            s.getTempoEstimadoHoras(),
+            s.getConcluido(),
+            s.getConcluidoEm(),
+            s.getDesconto(),
+            s.getDescontoTipo()
         );
     }
 }

@@ -13,7 +13,17 @@ public record OrdemServicoResumoDTO(
     String clienteNome,
     String veiculoPlaca,
     String veiculoModelo,
-    OffsetDateTime abertaEm
+    Long boxId,
+    Long mecanicoLiderId,
+    String tipo,
+    String canal,
+    String titulo,
+    OffsetDateTime previsaoEntrega,
+    OffsetDateTime abertaEm,
+    OffsetDateTime prontaEm,
+    OffsetDateTime entregueEm,
+    OffsetDateTime canceladaEm,
+    OffsetDateTime fechadaEm
 ) {
     public static OrdemServicoResumoDTO from(OrdemServico os) {
         return new OrdemServicoResumoDTO(
@@ -24,7 +34,17 @@ public record OrdemServicoResumoDTO(
             os.getCliente().getNome(),
             os.getVeiculo().getPlaca(),
             os.getVeiculo().getModelo(),
-            os.getAbertaEm()
+            os.getBox() != null ? os.getBox().getId() : null,
+            os.getMecanicoLider() != null ? os.getMecanicoLider().getId() : null,
+            os.getTipo(),
+            os.getCanal(),
+            os.getTitulo(),
+            os.getPrevisaoEntrega(),
+            os.getAbertaEm(),
+            os.getProntaEm(),
+            os.getEntregueEm(),
+            os.getCanceladaEm(),
+            os.getFechadaEm()
         );
     }
 }

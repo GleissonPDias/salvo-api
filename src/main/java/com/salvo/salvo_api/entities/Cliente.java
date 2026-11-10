@@ -36,6 +36,15 @@ public class Cliente {
     private String classificacao;
 
     @Column(nullable = false)
+    private Boolean whatsapp = false;
+
+    @Column(name = "aceita_comunicacoes", nullable = false)
+    private Boolean aceitaComunicacoes = false;
+
+    @Column(columnDefinition = "text")
+    private String observacoes;
+
+    @Column(nullable = false)
     private Boolean ativo = true;
 
     @Column(name = "criado_em", nullable = false, updatable = false)

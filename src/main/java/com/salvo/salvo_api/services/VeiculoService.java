@@ -56,6 +56,7 @@ public class VeiculoService {
 
         Veiculo veiculo = new Veiculo();
         veiculo.setCliente(cliente);
+        veiculo.setOficina(cliente.getOficina());
         veiculo.setPlaca(dto.placa().toUpperCase().replace("-", "").replace(" ", ""));
         veiculo.setChassi(dto.chassi());
         veiculo.setMarca(dto.marca());
@@ -68,6 +69,9 @@ public class VeiculoService {
         veiculo.setMotorizacao(dto.motorizacao());
         veiculo.setTransmissao(dto.transmissao());
         veiculo.setKmAtual(dto.kmAtual() != null ? dto.kmAtual() : 0);
+        veiculo.setFotoUrl(dto.fotoUrl());
+        veiculo.setCategoria(dto.categoria());
+        veiculo.setRascunho(Boolean.TRUE.equals(dto.rascunho()));
 
         return VeiculoDTO.from(veiculoRepository.save(veiculo));
     }
@@ -85,6 +89,8 @@ public class VeiculoService {
         if (dto.kmAtual() != null) veiculo.setKmAtual(dto.kmAtual());
         if (dto.versao() != null) veiculo.setVersao(dto.versao());
         if (dto.fotoUrl() != null) veiculo.setFotoUrl(dto.fotoUrl());
+        if (dto.categoria() != null) veiculo.setCategoria(dto.categoria());
+        if (dto.rascunho() != null) veiculo.setRascunho(dto.rascunho());
 
         return VeiculoDTO.from(veiculoRepository.save(veiculo));
     }

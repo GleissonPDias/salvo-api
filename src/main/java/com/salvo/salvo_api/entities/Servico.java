@@ -28,6 +28,17 @@ public class Servico {
 
     private String descricao;
 
+    private String categoria;
+
+    @Column(columnDefinition = "text")
+    private String detalhe;
+
+    @Column(name = "tempo_estimado_horas")
+    private BigDecimal tempoEstimadoHoras;
+
+    @Column(name = "garantia_tipo")
+    private String garantiaTipo;
+
     @Column(name = "preco_base", nullable = false)
     private BigDecimal precoBase = BigDecimal.ZERO;
 

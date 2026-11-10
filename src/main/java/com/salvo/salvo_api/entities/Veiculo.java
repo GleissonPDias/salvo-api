@@ -19,10 +19,15 @@ public class Veiculo {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @Column(nullable = false, unique = true)
+    // Preenchida pelo serviço a partir do cliente e, como reforço, por trigger
+    // do banco (V4). Substitui a unicidade global de placa/chassi por oficina.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "oficina_id", nullable = false)
+    private Oficina oficina;
+
+    @Column(nullable = false)
     private String placa;
 
-    @Column(unique = true)
     private String chassi;
 
     @Column(nullable = false)
@@ -52,6 +57,11 @@ public class Veiculo {
 
     @Column(name = "foto_url")
     private String fotoUrl;
+
+    private String categoria;
+
+    @Column(nullable = false)
+    private Boolean rascunho = false;
 
     @Column(nullable = false)
     private Boolean ativo = true;

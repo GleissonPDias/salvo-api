@@ -34,6 +34,9 @@ public class OsHistorico {
     @Column(nullable = false)
     private String descricao;
 
+    @Column(name = "tipo_evento", nullable = false)
+    private String tipoEvento = "STATUS";
+
     @Column(name = "criado_em", nullable = false, updatable = false)
     private OffsetDateTime criadoEm;
 

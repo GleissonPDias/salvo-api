@@ -55,6 +55,9 @@ public class ClienteService {
         cliente.setTelefone(dto.telefone());
         cliente.setTelefoneSecundario(dto.telefoneSecundario());
         cliente.setClassificacao(dto.classificacao());
+        cliente.setWhatsapp(Boolean.TRUE.equals(dto.whatsapp()));
+        cliente.setAceitaComunicacoes(Boolean.TRUE.equals(dto.aceitaComunicacoes()));
+        cliente.setObservacoes(dto.observacoes());
 
         return ClienteDTO.from(clienteRepository.save(cliente));
     }
@@ -70,6 +73,9 @@ public class ClienteService {
         if (dto.telefone() != null) cliente.setTelefone(dto.telefone());
         if (dto.telefoneSecundario() != null) cliente.setTelefoneSecundario(dto.telefoneSecundario());
         if (dto.classificacao() != null) cliente.setClassificacao(dto.classificacao());
+        if (dto.whatsapp() != null) cliente.setWhatsapp(dto.whatsapp());
+        if (dto.aceitaComunicacoes() != null) cliente.setAceitaComunicacoes(dto.aceitaComunicacoes());
+        if (dto.observacoes() != null) cliente.setObservacoes(dto.observacoes());
 
         return ClienteDTO.from(clienteRepository.save(cliente));
     }

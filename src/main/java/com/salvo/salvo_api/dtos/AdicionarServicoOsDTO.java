@@ -12,5 +12,8 @@ public record AdicionarServicoOsDTO(
     @NotNull @Positive BigDecimal quantidade,
     @NotNull @PositiveOrZero BigDecimal valorUnitario,
     Long mecanicoId,
-    BigDecimal tempoEstimadoHoras
+    BigDecimal tempoEstimadoHoras,
+    Boolean concluido,
+    @PositiveOrZero BigDecimal desconto,
+    String descontoTipo
 ) {}

@@ -7,5 +7,7 @@ public record AtualizarVeiculoDTO(
     String transmissao,
     Integer kmAtual,
     String versao,
-    String fotoUrl
+    String fotoUrl,
+    String categoria,
+    Boolean rascunho
 ) {}

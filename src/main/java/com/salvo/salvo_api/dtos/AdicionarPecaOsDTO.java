@@ -10,5 +10,10 @@ public record AdicionarPecaOsDTO(
     Long pecaId,
     @NotBlank(message = "Descrição é obrigatória") String descricao,
     @NotNull @Positive BigDecimal quantidade,
-    @NotNull @PositiveOrZero BigDecimal valorUnitario
+    @NotNull @PositiveOrZero BigDecimal valorUnitario,
+    Boolean cotada,
+    Boolean instalada,
+    @PositiveOrZero BigDecimal desconto,
+    String descontoTipo,
+    String unidade
 ) {}

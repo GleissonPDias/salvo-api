@@ -23,6 +23,45 @@ public class Oficina {
 
     private String telefone;
 
+    @Column(name = "nome_fantasia")
+    private String nomeFantasia;
+
+    private String email;
+
+    private String whatsapp;
+
+    private String site;
+
+    @Column(name = "logo_url", columnDefinition = "text")
+    private String logoUrl;
+
+    private String cep;
+
+    private String logradouro;
+
+    private String numero;
+
+    private String complemento;
+
+    private String bairro;
+
+    private String cidade;
+
+    @Column(length = 2)
+    private String uf;
+
+    @Column(name = "horario_funcionamento")
+    private String horarioFuncionamento;
+
+    @Column(name = "validade_orcamento_dias", nullable = false)
+    private Integer validadeOrcamentoDias = 7;
+
+    @Column(name = "desconto_maximo_percentual", nullable = false)
+    private java.math.BigDecimal descontoMaximoPercentual = java.math.BigDecimal.ZERO;
+
+    @Column(name = "cor_primaria", length = 7)
+    private String corPrimaria;
+
     @Column(nullable = false)
     private Boolean ativa = true;
 

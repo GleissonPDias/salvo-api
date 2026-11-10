@@ -40,11 +40,32 @@ public class OsServico {
     @Column(name = "tempo_estimado_horas")
     private BigDecimal tempoEstimadoHoras;
 
+    @Column(nullable = false)
+    private Boolean concluido = false;
+
+    @Column(name = "concluido_em")
+    private OffsetDateTime concluidoEm;
+
+    @Column(nullable = false)
+    private BigDecimal desconto = BigDecimal.ZERO;
+
+    @Column(name = "desconto_tipo", nullable = false)
+    private String descontoTipo = "VALOR";
+
     @Column(name = "criado_em", nullable = false, updatable = false)
     private OffsetDateTime criadoEm;
+
+    @Column(name = "atualizado_em", nullable = false)
+    private OffsetDateTime atualizadoEm;
 
     @PrePersist
     private void prePersist() {
         criadoEm = OffsetDateTime.now();
+        atualizadoEm = OffsetDateTime.now();
+    }
+
+    @PreUpdate
+    private void preUpdate() {
+        atualizadoEm = OffsetDateTime.now();
     }
 }

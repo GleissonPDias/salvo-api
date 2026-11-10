@@ -8,5 +8,8 @@ public record CriarClienteDTO(
     String email,
     @NotBlank(message = "Telefone é obrigatório") String telefone,
     String telefoneSecundario,
-    String classificacao
+    String classificacao,
+    Boolean whatsapp,
+    Boolean aceitaComunicacoes,
+    String observacoes
 ) {}
