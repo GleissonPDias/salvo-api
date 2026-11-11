@@ -1,5 +1,15 @@
 # Changelog — Salvô API
 
+## Correção — listagem da equipe (`GET /usuarios`)
+
+**Sintoma:** a tela Equipe retornava `500` com `function lower(bytea) does not exist`.
+
+**Causa:** na query `UsuarioRepository.buscarEquipe`, os filtros opcionais (`:busca`, `:ativo`, `:executaOs`) chegavam como `null` sem tipo. Com `lower(?)`, o PostgreSQL inferia `bytea`.
+
+**Correção:** os parâmetros opcionais agora são tipados na query (`cast(:busca as string)`, `cast(:ativo as boolean)` e `cast(:executaOs as boolean)`). Nenhuma migração foi necessária.
+
+---
+
 ## Entrega atual — cadastro de equipe e permissões (V5)
 
 Escopo: funcionários cadastrados pelo administrador da oficina, com acesso operacional sem Financeiro, Equipe e Configurações.

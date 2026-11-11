@@ -31,12 +31,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
         select u
           from Usuario u
          where u.oficina.id = :oficinaId
-           and (:ativo is null or u.ativo = :ativo)
-           and (:executaOs is null or u.executaOs = :executaOs)
+           and (cast(:ativo as boolean) is null or u.ativo = :ativo)
+           and (cast(:executaOs as boolean) is null or u.executaOs = :executaOs)
            and (
-                :busca is null
-                or lower(u.nome) like lower(concat('%', :busca, '%'))
-                or lower(u.email) like lower(concat('%', :busca, '%'))
+                cast(:busca as string) is null
+                or lower(u.nome) like lower(concat('%', cast(:busca as string), '%'))
+                or lower(u.email) like lower(concat('%', cast(:busca as string), '%'))
            )
          order by u.ativo desc, u.nome asc
         """)
