@@ -1,5 +1,42 @@
 # Changelog — Salvô API
 
+## Entrega atual — cadastro de equipe e permissões (V5)
+
+Escopo: funcionários cadastrados pelo administrador da oficina, com acesso operacional sem Financeiro, Equipe e Configurações.
+
+**Migração:** `V5__cadastro_equipe_e_permissoes.sql` (V1–V4 não foram editadas).
+
+### Adicionado
+
+- Colunas `usuarios.perfil` (`ADMIN`/`FUNCIONARIO`), `executa_os` e `deve_trocar_senha`.
+- Backfill: usuários com cargo `ADMIN`, `DONO` ou `PROPRIETARIO` viram `ADMIN`; os demais, `FUNCIONARIO`.
+- Constraint `usuarios_perfil_chk` e índices por oficina/perfil e oficina/executa_os.
+- Enum `PerfilUsuario`.
+- Endpoints `GET/POST /usuarios`, `GET/PUT /usuarios/{id}`, `PATCH /usuarios/{id}/status` e `POST /usuarios/{id}/reset-senha`.
+- `SupabaseAdminService`: criar usuário, convidar, redefinir senha, banir/desbanir e excluir via Admin API.
+- Senha temporária gerada pelo back-end e devolvida uma única vez.
+- `PermissaoService` (bean `@permissoes`) e `@EnableMethodSecurity`.
+- `403` para usuário inativo no `OficinaContexto`.
+- `503 SERVICO_INDISPONIVEL` quando a service role key não está configurada.
+- `docs/PLANO-EQUIPE.md`.
+- Endpoints `GET/POST /boxes`, `PUT /boxes/{id}` e `DELETE /boxes/{id}` (desativação), com nome único por oficina (`BoxService`).
+- Endpoints `GET /oficina` e `PUT /oficina` com dados cadastrais e de configuração (escrita só ADMIN).
+
+### Alterado
+
+- `GET /auth/me` passa a devolver `perfil`, `ativo` e `executaOs`.
+- `GET /mecanicos` passa a devolver apenas ativos com `executa_os = true`, em `MecanicoDTO` enxuto (sem e-mail, telefone ou comissão).
+- `FinanceiroController` e `UsuarioController` são admin-only via `@PreAuthorize`.
+- `RegistroService` cria o dono da oficina como `ADMIN`.
+
+### Variável de ambiente
+
+- `SUPABASE_SERVICE_ROLE_KEY` (obrigatória para cadastro/reset de funcionário).
+
+---
+
+## Entrega anterior — V4 multi-oficina
+
 Registro das alterações feitas nesta entrega (integração do front-end + V4 multi-oficina).
 
 **Commit:** `3f1712a feat(saas): V4 multi-oficina com cadastro, edicao de OS e catalogo`

@@ -2,7 +2,7 @@
 
 O schema é versionado com **Flyway** e validado pelo Hibernate no start (`ddl-auto=validate`). Este documento descreve as migrações, as regras que vivem no PostgreSQL e como validar tudo localmente.
 
-> **Regra de ouro:** migrações já aplicadas (`V1`, `V2`, `V3`) **não são editadas**. Toda mudança nova entra em uma nova versão (`V5`, `V6`...). A entrega atual adicionou apenas a `V4`.
+> **Regra de ouro:** migrações já aplicadas (`V1`, `V2`, `V3`, `V4`) **não são editadas**. Toda mudança nova entra em uma nova versão (`V5`, `V6`...). A entrega atual adicionou a `V4` e a `V5`.
 
 ---
 
@@ -13,6 +13,7 @@ O schema é versionado com **Flyway** e validado pelo Hibernate no start (`ddl-a
 - [V2 — correções](#v2--correções)
 - [V3 — numeração de OS](#v3--numeração-de-os)
 - [V4 — SaaS multi-oficina](#v4--saas-multi-oficina)
+- [V5 — equipe e permissões](#v5--equipe-e-permissões)
 - [Regras no banco](#regras-no-banco)
 - [RLS e segurança](#rls-e-segurança)
 - [Validação local](#validação-local)
@@ -29,6 +30,7 @@ O schema é versionado com **Flyway** e validado pelo Hibernate no start (`ddl-a
 | V2 | `V2__corrigir_baseline.sql` | Corrige nomes de colunas/triggers do schema legado |
 | V3 | `V3__numeracao_sequencial_os.sql` | Numeração sequencial e imutável de OS por oficina |
 | V4 | `V4__saas_multi_oficina_features.sql` | Multi-oficina + funcionalidades usadas pelo front |
+| V5 | `V5__cadastro_equipe_e_permissoes.sql` | Perfil de acesso, flag de mecânico e senha temporária |
 
 As migrações são **idempotentes** e usam `if not exists`, `do $$ ... $$` e `on conflict` para poderem rodar em bancos que já têm parte do schema.
 
@@ -286,6 +288,46 @@ Comenta as tabelas novas para facilitar consultas no Supabase.
 
 ---
 
+## V5 — equipe e permissões
+
+Arquivo: `src/main/resources/db/migration/V5__cadastro_equipe_e_permissoes.sql`
+
+Cadastro de funcionários pelo administrador e separação entre **perfil de acesso** e **função operacional**.
+
+### Colunas novas em `usuarios`
+
+| Coluna | Tipo | Default | Papel |
+| --- | --- | --- | --- |
+| `perfil` | `varchar(20)` | `FUNCIONARIO` | `ADMIN` ou `FUNCIONARIO` |
+| `executa_os` | `boolean` | `true` | Aparece como mecânico responsável na OS |
+| `deve_trocar_senha` | `boolean` | `false` | Senha temporária gerada pelo admin |
+
+O `cargo` continua sendo texto livre para exibição (Mecânico, Atendente etc.) e não define permissão.
+
+### Backfill
+
+```sql
+update public.usuarios
+   set perfil = 'ADMIN'
+ where upper(btrim(cargo)) in ('ADMIN', 'DONO', 'PROPRIETARIO');
+```
+
+Quem já era dono da conta permanece `ADMIN`. Os demais viram `FUNCIONARIO`. `executa_os` nasce `true` para preservar os usuários existentes no dropdown de mecânicos.
+
+### Constraint e índices
+
+- `usuarios_perfil_chk`: garante `perfil in ('ADMIN', 'FUNCIONARIO')`.
+- `ix_usuarios_oficina_perfil_ativo` em `(oficina_id, perfil, ativo)`.
+- `ix_usuarios_oficina_executa_os` em `(oficina_id, executa_os, ativo)`.
+
+### Compatibilidade
+
+A V5 é **aditiva e idempotente**. O front antigo continua funcionando: os defaults preservam o comportamento anterior. A autorização por perfil é aplicada na API (`@PreAuthorize` + `PermissaoService`), não no banco.
+
+> A identidade do funcionário é criada no **Supabase Auth** pela Admin API. A V5 não altera o schema `auth`; apenas grava o `auth_user_id` em `usuarios`.
+
+---
+
 ## Regras no banco
 
 | Regra | Onde | Efeito |
@@ -299,6 +341,7 @@ Comenta as tabelas novas para facilitar consultas no Supabase.
 | Código de serviço/peça por oficina | V4 índice único | Evita duplicidade no catálogo |
 | Vistoria única por OS | V4 índice único | Uma vistoria por OS |
 | Período de agendamento | V4 check | `fim > inicio` |
+| Perfil de acesso | V5 check | `perfil` limitado a `ADMIN`/`FUNCIONARIO` |
 | `atualizado_em` | V2/V4 triggers | Atualizado em todo `UPDATE` |
 
 ---
@@ -335,7 +378,7 @@ Mantenha essa exclusão em qualquer migração futura que faça loop de RLS.
 
 ## Validação local
 
-A entrega foi validada em um PostgreSQL 17.11 limpo, com Flyway aplicando V1→V4 em aproximadamente 0,7 s, seguido de `Started SalvoApiApplication` e `ddl-auto=validate` sem erros.
+A entrega foi validada em um PostgreSQL 17.11 limpo, com Flyway aplicando V1→V5 em aproximadamente 0,7 s, seguido de `Started SalvoApiApplication` e `ddl-auto=validate` sem erros.
 
 Como a V2 versionada falha em banco vazio, a validação usa uma **cópia corrigida** das migrações fora do repositório:
 
@@ -360,7 +403,8 @@ Testes de banco executados (com rollback, sem deixar registros):
 - numeração de pedido de compra é sequencial;
 - flags de RLS e policy existem nas tabelas;
 - `oficinas.uf` tem tamanho 2;
-- V4 aplica sobre banco com dados legados.
+- V4 aplica sobre banco com dados legados;
+- V5 aplica sobre banco com dados legados e preserva o admin existente.
 
 **Nunca crie registros de teste no banco de produção do usuário.** Use transações com rollback ou um banco local descartável.
 
@@ -397,7 +441,7 @@ A V4 normaliza para `varchar(2)`. Se o banco tiver UFs com mais de 2 caracteres,
 
 ## Como criar uma nova migração
 
-1. Crie `V5__descricao_curta.sql` (nunca edite V1–V4).
+1. Crie `V6__descricao_curta.sql` (nunca edite V1–V5).
 2. Use operações **aditivas e idempotentes**: `if not exists`, `do $$ ... $$`, `on conflict`.
 3. Prefira colunas nullable ou com default para não quebrar código antigo durante o deploy.
 4. Se adicionar coluna mapeada pela entidade, atualize a entidade e rode com `ddl-auto=validate`.

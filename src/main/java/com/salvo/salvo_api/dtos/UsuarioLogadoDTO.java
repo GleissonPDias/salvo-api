@@ -1,5 +1,6 @@
 package com.salvo.salvo_api.dtos;
 
+import com.salvo.salvo_api.domain.usuario.PerfilUsuario;
 import com.salvo.salvo_api.entities.Usuario;
 import java.math.BigDecimal;
 
@@ -10,6 +11,9 @@ public record UsuarioLogadoDTO(
     String nome,
     String email,
     String cargo,
+    PerfilUsuario perfil,
+    Boolean ativo,
+    Boolean executaOs,
     String telefone,
     String especialidades,
     Boolean lider,
@@ -25,6 +29,9 @@ public record UsuarioLogadoDTO(
             u.getNome(),
             u.getEmail(),
             u.getCargo(),
+            u.getPerfil(),
+            u.getAtivo(),
+            u.getExecutaOs(),
             u.getTelefone(),
             u.getEspecialidades(),
             u.getLider(),

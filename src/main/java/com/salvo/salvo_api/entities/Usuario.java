@@ -1,5 +1,6 @@
 package com.salvo.salvo_api.entities;
 
+import com.salvo.salvo_api.domain.usuario.PerfilUsuario;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,6 +33,16 @@ public class Usuario {
     @Column(nullable = false)
     private String cargo;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PerfilUsuario perfil = PerfilUsuario.FUNCIONARIO;
+
+    @Column(name = "executa_os", nullable = false)
+    private Boolean executaOs = true;
+
+    @Column(name = "deve_trocar_senha", nullable = false)
+    private Boolean deveTrocarSenha = false;
+
     private String telefone;
 
     private String especialidades;
@@ -60,6 +71,11 @@ public class Usuario {
     @PrePersist
     private void prePersist() {
         criadoEm = OffsetDateTime.now();
+        atualizadoEm = OffsetDateTime.now();
+    }
+
+    @PreUpdate
+    private void preUpdate() {
         atualizadoEm = OffsetDateTime.now();
     }
 }

@@ -23,6 +23,14 @@ public class OficinaContexto {
         String sub = jwt.getSubject();
 
         return usuarioRepository.findByAuthUserId(UUID.fromString(sub))
+            .map(usuario -> {
+                if (!Boolean.TRUE.equals(usuario.getAtivo())) {
+                    throw new AcessoNegadoException(
+                        "Usuário inativo. Procure o administrador da oficina."
+                    );
+                }
+                return usuario;
+            })
             .orElseThrow(() -> new AcessoNegadoException(
                 "Usuário com auth_user_id=" + sub + " não está registrado em nenhuma oficina."
             ));

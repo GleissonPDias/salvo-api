@@ -18,6 +18,8 @@ Os exemplos usam JSON. Datas e horários com fuso usam ISO-8601 (`2026-11-10T14:
 
 - [Convenções](#convenções)
 - [Autenticação](#autenticação)
+- [Equipe e permissões](#equipe-e-permissões)
+- [Boxes e oficina](#boxes-e-oficina)
 - [Clientes](#clientes)
 - [Veículos](#veículos)
 - [Ordens de serviço](#ordens-de-serviço)
@@ -125,6 +127,9 @@ Resposta: mesma estrutura do login quando o Supabase devolve sessão; caso a con
   "nome": "Carlos Silva",
   "email": "carlos@silva.com",
   "cargo": "ADMIN",
+  "perfil": "ADMIN",
+  "ativo": true,
+  "executaOs": true,
   "telefone": "(11) 99999-9999",
   "especialidades": null,
   "lider": true,
@@ -133,6 +138,190 @@ Resposta: mesma estrutura do login quando o Supabase devolve sessão; caso a con
   "fotoUrl": null
 }
 ```
+
+`perfil` é `ADMIN` ou `FUNCIONARIO`. `executaOs` indica se o usuário aparece como mecânico responsável na OS, independentemente do `cargo` exibido.
+
+---
+
+## Equipe e permissões
+
+O cadastro de funcionários é feito pelo **administrador** da oficina, já autenticado. Todo usuário criado por aqui nasce com `perfil = FUNCIONARIO`.
+
+| Método | Caminho | Autorização | Descrição |
+| --- | --- | --- | --- |
+| `GET` | `/usuarios?busca=&ativo=&executaOs=` | ADMIN | Lista a equipe da oficina |
+| `GET` | `/usuarios/{id}` | ADMIN ou o próprio | Detalhe do usuário |
+| `POST` | `/usuarios` | ADMIN | Cria funcionário no Supabase Auth + `usuarios` |
+| `PUT` | `/usuarios/{id}` | ADMIN | Edita dados operacionais |
+| `PATCH` | `/usuarios/{id}/status` | ADMIN | Ativa/desativa |
+| `POST` | `/usuarios/{id}/reset-senha` | ADMIN | Gera senha temporária |
+| `GET` | `/mecanicos` | Autenticado | Ativos com `executaOs = true` |
+
+### Criar funcionário
+
+```json
+{
+  "nome": "João Mecânico",
+  "email": "joao@oficina.com",
+  "senhaInicial": null,
+  "enviarConvite": false,
+  "telefone": "(11) 98888-7777",
+  "cargo": "Mecânico",
+  "especialidades": "Motor e freios",
+  "lider": false,
+  "comissaoPercentual": 10.00,
+  "corAgenda": "#2563eb",
+  "executaOs": true
+}
+```
+
+Regras:
+
+- `nome`, `email` e `cargo` são obrigatórios;
+- o perfil é sempre `FUNCIONARIO`; apenas o dono da conta é `ADMIN`;
+- `executaOs` (padrão `true`) define se o funcionário aparece em `GET /mecanicos`;
+- `senhaInicial`, quando omitida, é gerada pelo back-end e devolvida **uma única vez**;
+- `enviarConvite = true` envia convite por e-mail pelo Supabase (requer SMTP configurado);
+- e-mail já existente retorna `422 REGRA_DE_NEGOCIO`.
+
+Resposta `201`:
+
+```json
+{
+  "usuario": {
+    "id": 20,
+    "nome": "João Mecânico",
+    "email": "joao@oficina.com",
+    "cargo": "Mecânico",
+    "perfil": "FUNCIONARIO",
+    "telefone": "(11) 98888-7777",
+    "especialidades": "Motor e freios",
+    "lider": false,
+    "comissaoPercentual": 10.00,
+    "corAgenda": "#2563eb",
+    "fotoUrl": null,
+    "ativo": true,
+    "executaOs": true,
+    "deveTrocarSenha": true,
+    "criadoEm": "2026-11-10T12:00:00Z"
+  },
+  "senhaTemporaria": "Xy7kPq2mN4rs"
+}
+```
+
+`senhaTemporaria` vem `null` quando uma senha inicial foi informada ou quando o convite foi enviado.
+
+### Editar, ativar e redefinir senha
+
+`PUT /usuarios/{id}` aceita `nome`, `telefone`, `cargo`, `especialidades`, `lider`, `comissaoPercentual`, `corAgenda` e `executaOs`. E-mail e perfil não são alteráveis na v1.
+
+```http
+PATCH /usuarios/{id}/status
+```
+
+```json
+{ "ativo": false }
+```
+
+- desativar o próprio usuário retorna `422`;
+- desativar o último `ADMIN` ativo da oficina retorna `422`;
+- usuário inativo recebe `403` em qualquer rota autenticada;
+- o banimento no Supabase é feito em modo *best-effort*.
+
+```http
+POST /usuarios/{id}/reset-senha
+```
+
+```json
+{ "senhaTemporaria": "Xy7kPq2mN4rs" }
+```
+
+A senha é exibida uma única vez e `deveTrocarSenha` volta para `true`.
+
+### Supabase Admin API
+
+A criação, o convite, a redefinição de senha e o banimento usam a **service role key** do Supabase:
+
+```properties
+salvo.security.supabase.service-role-key=${SUPABASE_SERVICE_ROLE_KEY:}
+```
+
+Sem essa variável, as operações que dependem do Supabase Admin retornam `503 SERVICO_INDISPONIVEL`; o restante da API continua funcionando.
+
+### Matriz de acesso
+
+| Área | ADMIN | FUNCIONARIO |
+| --- | --- | --- |
+| Clientes, veículos e OS | sim | sim |
+| Catálogo e estoque | sim | sim |
+| Agenda | sim | sim |
+| Equipe (`/usuarios`) | sim | **não** |
+| Financeiro (`/pagamentos`, `/despesas`) | sim | **não** |
+| Relatórios financeiros | sim | **não** |
+
+A restrição é aplicada no back-end com `@PreAuthorize`; esconder o item de menu no front é apenas usabilidade.
+
+---
+
+## Boxes e oficina
+
+### Boxes de atendimento
+
+| Método | Caminho | Autorização | Descrição |
+| --- | --- | --- | --- |
+| `GET` | `/boxes?incluirInativos=false` | Autenticado | Lista os boxes ativos (ou todos, com `incluirInativos=true`) |
+| `POST` | `/boxes` | ADMIN | Cria um box |
+| `PUT` | `/boxes/{id}` | ADMIN | Altera nome, descrição ou situação (`ativo`) |
+| `DELETE` | `/boxes/{id}` | ADMIN | Desativa o box (não remove: OS e agendamentos antigos continuam referenciando-o) |
+
+```json
+{ "nome": "Box 07", "descricao": "Elevador hidráulico" }
+```
+
+Resposta: `{ "id": 7, "nome": "Box 07", "descricao": "Elevador hidráulico", "ativo": true }`.
+
+Regras:
+
+- nome obrigatório (até 60 caracteres), único por oficina ignorando maiúsculas e espaços (`422` se repetido);
+- no `PUT`, `null` mantém o valor atual e `""` limpa a descrição; `nome` em branco retorna `422`;
+- boxes desativados deixam de aparecer em `GET /boxes` padrão.
+
+### Dados da oficina
+
+| Método | Caminho | Autorização | Descrição |
+| --- | --- | --- | --- |
+| `GET` | `/oficina` | Autenticado | Dados cadastrais e de configuração da oficina do usuário |
+| `PUT` | `/oficina` | ADMIN | Atualiza os dados da oficina |
+
+Resposta de `GET`:
+
+```json
+{
+  "id": 16,
+  "nome": "Oficina Matriz",
+  "nomeFantasia": "Salvô Gestão Automotiva",
+  "cnpj": "12345678000190",
+  "telefone": "1130457700",
+  "whatsapp": "11977774500",
+  "email": "contato@oficina.com",
+  "site": null,
+  "logoUrl": null,
+  "cep": "04556500",
+  "logradouro": "Av. Santo Amaro",
+  "numero": "4120",
+  "complemento": null,
+  "bairro": "Brooklin",
+  "cidade": "São Paulo",
+  "uf": "SP",
+  "horarioFuncionamento": "Seg a sex, 8h às 18h",
+  "validadeOrcamentoDias": 7,
+  "descontoMaximoPercentual": 10.00,
+  "corPrimaria": "#2563eb",
+  "ativa": true
+}
+```
+
+No `PUT`, `nome` é obrigatório. Nos demais campos, `null` (ou campo omitido) mantém o valor atual, enquanto texto vazio `""` limpa o campo. `cnpj` e `cep` são gravados somente com dígitos; `uf` é normalizado para maiúsculas. `validadeOrcamentoDias` (1 a 365) e `descontoMaximoPercentual` (0 a 100) são validados.
 
 ---
 
@@ -492,7 +681,7 @@ POST /ordens-servico/1/pecas
 | `DELETE` | `/servicos/{id}` | Desativa |
 | `GET` | `/servicos/{id}/pecas-sugeridas` | Peças sugeridas |
 | `PUT` | `/servicos/{id}/pecas-sugeridas` | Substitui peças sugeridas |
-| `GET` | `/mecanicos` | Equipe técnica da oficina |
+| `GET` | `/mecanicos` | Mecânicos ativos que podem ser responsáveis por uma OS |
 
 ### Criação de serviço
 
@@ -547,7 +736,23 @@ A resposta é a lista de `PecaDTO` atualizada. IDs de peças de outra oficina re
 
 ### Equipe técnica
 
-`GET /mecanicos` retorna `UsuarioLogadoDTO[]` dos usuários ativos da oficina.
+`GET /mecanicos` retorna `MecanicoDTO[]` apenas dos usuários ativos com `executaOs = true`, ordenados por liderança e nome. O payload é enxuto e não expõe e-mail, telefone ou comissão:
+
+```json
+[
+  {
+    "id": 20,
+    "nome": "João Mecânico",
+    "cargo": "Mecânico",
+    "especialidades": "Motor e freios",
+    "lider": false,
+    "corAgenda": "#2563eb",
+    "fotoUrl": null
+  }
+]
+```
+
+O cadastro e a edição da equipe ficam em [`/usuarios`](#equipe-e-permissões).
 
 ---
 
@@ -1007,9 +1212,10 @@ Regras:
 
 | HTTP | `codigo` | Causa |
 | --- | --- | --- |
-| 403 | `ACESSO_NEGADO` | JWT sem usuário local/oficina |
+| 403 | `ACESSO_NEGADO` | JWT sem usuário local/oficina, usuário inativo ou perfil sem permissão |
 | 404 | `NAO_ENCONTRADO` | Recurso fora da oficina ou inexistente |
 | 409 | `CONFLITO` | CPF, placa, chassi, código, e-mail, CNPJ ou número duplicado |
 | 422 | `VALIDACAO` | Falha de Bean Validation |
-| 422 | `REGRA_DE_NEGOCIO` | Estoque insuficiente, status inválido, pedido já recebido etc. |
+| 422 | `REGRA_DE_NEGOCIO` | Estoque insuficiente, status inválido, pedido já recebido, e-mail duplicado etc. |
+| 503 | `SERVICO_INDISPONIVEL` | Dependência externa não configurada (ex.: `SUPABASE_SERVICE_ROLE_KEY`) |
 | 500 | `ERRO_INTERNO` | Falha inesperada |

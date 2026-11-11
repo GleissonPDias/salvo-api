@@ -3,6 +3,7 @@ package com.salvo.salvo_api.exceptions;
 import com.salvo.salvo_api.dtos.ErroDTO;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,6 +25,18 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErroDTO handleAcessoNegado(AcessoNegadoException ex) {
         return new ErroDTO("ACESSO_NEGADO", ex.getMessage());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErroDTO handleSpringAccessDenied(AccessDeniedException ex) {
+        return new ErroDTO("ACESSO_NEGADO", "Você não tem permissão para acessar este recurso.");
+    }
+
+    @ExceptionHandler(ServicoIndisponivelException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ErroDTO handleServicoIndisponivel(ServicoIndisponivelException ex) {
+        return new ErroDTO("SERVICO_INDISPONIVEL", ex.getMessage());
     }
 
     @ExceptionHandler(RegraDeNegocioException.class)

@@ -19,6 +19,8 @@ O front-end React está em um repositório separado (`pi05`) e consome esta API 
 - [Multi-oficina (tenancy)](#multi-oficina-tenancy)
 - [Grupos de endpoints](#grupos-de-endpoints)
 - [Funcionalidades da V4](#funcionalidades-da-v4)
+- [Funcionalidades da V5](#funcionalidades-da-v5)
+- [Boxes e dados da oficina](#boxes-e-dados-da-oficina)
 - [Banco de dados e Flyway](#banco-de-dados-e-flyway)
 - [Deploy no Render](#deploy-no-render)
 - [Estrutura do projeto](#estrutura-do-projeto)
@@ -133,9 +135,10 @@ Todas têm valor padrão em `src/main/resources/application.properties`, mas em 
 | `SUPABASE_AUTH_JWK_SET_URI` | `https://seu-projeto.supabase.co/auth/v1/.well-known/jwks.json` | Chaves públicas para validar o JWT |
 | `SUPABASE_AUTH_URL` | `https://gkgnfxkbwexpihqybcue.supabase.co/auth/v1` | Base do Supabase Auth usada em login/cadastro |
 | `SUPABASE_ANON_KEY` | vazio | Chave anon usada em `/auth/login` e `/auth/registrar` |
+| `SUPABASE_SERVICE_ROLE_KEY` | vazio | Chave de serviço usada pela Admin API para cadastrar funcionários, redefinir senha e banir usuários |
 | `SUPABASE_JWT_SECRET` | vazio | Reservado para validação simétrica legada |
 
-> Sem `SUPABASE_ANON_KEY`, o login e o cadastro retornam erro de regra de negócio explicando que a chave precisa ser configurada.
+> Sem `SUPABASE_ANON_KEY`, o login e o cadastro retornam erro de regra de negócio explicando que a chave precisa ser configurada. Sem `SUPABASE_SERVICE_ROLE_KEY`, os endpoints de equipe que dependem do Supabase Admin retornam `503`; o restante da API continua funcionando.
 
 ### Flyway / JPA
 
@@ -210,7 +213,9 @@ GET /auth/me
 Authorization: Bearer <token>
 ```
 
-Retorna `id`, `oficinaId`, `oficinaNome`, `nome`, `email`, `cargo`, `telefone`, `especialidades`, `lider`, `comissaoPercentual`, `corAgenda` e `fotoUrl`.
+Retorna `id`, `oficinaId`, `oficinaNome`, `nome`, `email`, `cargo`, `perfil`, `ativo`, `executaOs`, `telefone`, `especialidades`, `lider`, `comissaoPercentual`, `corAgenda` e `fotoUrl`.
+
+`perfil` é `ADMIN` ou `FUNCIONARIO`. `executaOs` indica se o usuário pode ser escolhido como mecânico responsável na OS.
 
 ### Rotas públicas
 
@@ -230,7 +235,8 @@ Todas as demais exigem JWT válido.
 - `OficinaContexto` resolve o usuário local pelo `auth_user_id` e obtém `oficina_id`.
 - Serviços e repositórios sempre filtram por `oficina_id`.
 - O banco tem RLS habilitado em `public`; a policy permissiva é criada apenas para o papel da API (`current_user`). `anon` e `authenticated` não recebem grants — o front nunca fala direto com o banco.
-- Se um JWT válido não tiver usuário local correspondente, a API responde `403 ACESSO_NEGADO`.
+- Se um JWT válido não tiver usuário local correspondente **ou** o usuário estiver inativo, a API responde `403 ACESSO_NEGADO`.
+- O perfil (`ADMIN`/`FUNCIONARIO`) é lido do banco, não do JWT, e é aplicado com `@PreAuthorize`. Financeiro e Equipe são exclusivos do `ADMIN`.
 
 ---
 
@@ -244,7 +250,8 @@ Referência completa, com corpos de requisição e resposta em [docs/API.md](doc
 | Clientes | `/clientes` | CRUD com paginação e busca; exclusão lógica |
 | Veículos | `/veiculos`, `/clientes/{id}/veiculos` | CRUD por oficina; exclusão lógica |
 | Ordens de Serviço | `/ordens-servico` | Lista paginada, detalhe por número, status, itens, histórico |
-| Catálogo | `/servicos`, `/pecas`, `/mecanicos` | Serviços, peças, peças sugeridas e equipe |
+| Catálogo | `/servicos`, `/pecas`, `/mecanicos` | Serviços, peças, peças sugeridas e equipe técnica |
+| Equipe | `/usuarios` | Cadastro e gestão de funcionários (somente `ADMIN`)
 | Estoque | `/pecas/{id}/movimentacoes`, `/estoque/movimentacoes` | Entradas, saídas, ajustes e histórico |
 | Vistoria | `/ordens-servico/{numero}/vistoria` | Vistoria de entrada com danos e fotos |
 | Fornecedores | `/fornecedores` | CRUD de fornecedores |
@@ -294,6 +301,33 @@ A migração `V4__saas_multi_oficina_features.sql` e o código correspondente en
 
 ---
 
+## Funcionalidades da V5
+
+A migração `V5__cadastro_equipe_e_permissoes.sql` adiciona o cadastro de funcionários pelo administrador:
+
+- `usuarios.perfil`: `ADMIN` ou `FUNCIONARIO`;
+- `usuarios.executa_os`: define quem aparece como mecânico responsável na OS;
+- `usuarios.deve_trocar_senha`: prepara o fluxo de senha temporária;
+- backfill preserva como `ADMIN` quem já tinha cargo `ADMIN`, `DONO` ou `PROPRIETARIO`;
+- `GET/POST /usuarios`, `GET/PUT /usuarios/{id}`, `PATCH /usuarios/{id}/status` e `POST /usuarios/{id}/reset-senha`;
+- funcionário criado sempre nasce `FUNCIONARIO` e é criado no Supabase Auth via Admin API;
+- `GET /mecanicos` devolve apenas ativos com `executa_os = true`, em payload enxuto;
+- `Financeiro`, `Equipe` e `Configurações` são admin-only no back-end (`@PreAuthorize`);
+- usuário inativo recebe `403` em qualquer rota autenticada;
+- sem `SUPABASE_SERVICE_ROLE_KEY`, cadastro/reset de funcionário retorna `503`.
+
+O plano completo está em [docs/PLANO-EQUIPE.md](docs/PLANO-EQUIPE.md).
+
+---
+
+## Boxes e dados da oficina
+
+- `GET /boxes` (ativos por padrão, `incluirInativos=true` para todos), `POST /boxes`, `PUT /boxes/{id}` e `DELETE /boxes/{id}` (desativação). Escrita restrita ao `ADMIN`; nome único por oficina.
+- `GET /oficina` e `PUT /oficina` com dados cadastrais (nome fantasia, CNPJ, contatos, endereço, validade de orçamento, desconto máximo e cor primária). Usados no cabeçalho dos documentos impressos. Escrita restrita ao `ADMIN`.
+- Não exige migração nova: usa as tabelas `boxes` e `oficinas` já criadas pela V1/V2/V4.
+
+Detalhes e exemplos em [docs/API.md](docs/API.md#boxes-e-oficina).
+
 ## Banco de dados e Flyway
 
 As migrações ficam em `src/main/resources/db/migration`:
@@ -304,20 +338,21 @@ As migrações ficam em `src/main/resources/db/migration`:
 | V2 | `V2__corrigir_baseline.sql` | Correções de nomes, triggers e tipos |
 | V3 | `V3__numeracao_sequencial_os.sql` | Numeração sequencial e imutável de OS por oficina |
 | V4 | `V4__saas_multi_oficina_features.sql` | Multi-oficina, status, OS, estoque, financeiro, agenda, notificações e RLS |
+| V5 | `V5__cadastro_equipe_e_permissoes.sql` | Perfil de acesso, flag de mecânico e senha temporária |
 
 Regras importantes:
 
-- **Nunca edite V1, V2 ou V3.** Toda mudança nova entra em uma nova versão.
-- A V4 é **idempotente** e **aditiva**.
+- **Nunca edite V1, V2, V3 ou V4.** Toda mudança nova entra em uma nova versão.
+- A V4 e a V5 são **idempotentes** e **aditivas**.
 - Detalhes de triggers, RLS e validação local estão em [docs/BANCO-E-MIGRACOES.md](docs/BANCO-E-MIGRACOES.md).
 
 ---
 
 ## Deploy no Render
 
-A ordem importa: **o back-end com a V4 deve ser publicado antes do front-end novo**.
+A ordem importa: **o back-end com a V5 deve ser publicado antes do front-end novo**.
 
-1. Configure as variáveis de ambiente no Render (`SPRING_DATASOURCE_*` e `SUPABASE_*`).
+1. Configure as variáveis de ambiente no Render (`SPRING_DATASOURCE_*`, `SUPABASE_*` e `SUPABASE_SERVICE_ROLE_KEY`).
 2. Faça o deploy da `main`.
 3. No start, o Flyway aplica as migrações pendentes.
 4. Confirme nos logs:
@@ -377,11 +412,12 @@ Formato único de erro (`ErroDTO`):
 | --- | --- | --- |
 | 400 | — | Erro de sintaxe/parâmetro |
 | 401 | — | Token ausente, inválido ou expirado |
-| 403 | `ACESSO_NEGADO` | Usuário sem oficina/registro local |
+| 403 | `ACESSO_NEGADO` | Usuário sem oficina/registro local, inativo ou sem permissão |
 | 404 | `NAO_ENCONTRADO` | Recurso inexistente na oficina |
 | 409 | `CONFLITO` | Unicidade (CPF, placa, código, e-mail...) |
 | 422 | `VALIDACAO` | Campos inválidos (com `detalhes`) |
 | 422 | `REGRA_DE_NEGOCIO` | Regra de negócio violada |
+| 503 | `SERVICO_INDISPONIVEL` | Dependência externa não configurada (ex.: `SUPABASE_SERVICE_ROLE_KEY`) |
 | 500 | `ERRO_INTERNO` | Falha inesperada |
 
 ---
@@ -389,8 +425,9 @@ Formato único de erro (`ErroDTO`):
 ## Documentação detalhada
 
 - [docs/API.md](docs/API.md) — referência de endpoints, contratos e exemplos.
-- [docs/BANCO-E-MIGRACOES.md](docs/BANCO-E-MIGRACOES.md) — schema, triggers, RLS, V1–V4 e validação local.
-- [docs/ALTERACOES.md](docs/ALTERACOES.md) — changelog desta entrega.
+- [docs/BANCO-E-MIGRACOES.md](docs/BANCO-E-MIGRACOES.md) — schema, triggers, RLS, V1–V5 e validação local.
+- [docs/ALTERACOES.md](docs/ALTERACOES.md) — changelog das entregas.
+- [docs/PLANO-EQUIPE.md](docs/PLANO-EQUIPE.md) — plano de cadastro de equipe e permissões.
 
 ---
 

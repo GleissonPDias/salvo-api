@@ -2,6 +2,7 @@ package com.salvo.salvo_api.services;
 
 import com.salvo.salvo_api.dtos.LoginResponseDTO;
 import com.salvo.salvo_api.dtos.RegistrarOficinaDTO;
+import com.salvo.salvo_api.domain.usuario.PerfilUsuario;
 import com.salvo.salvo_api.entities.Oficina;
 import com.salvo.salvo_api.entities.Usuario;
 import com.salvo.salvo_api.exceptions.RegraDeNegocioException;
@@ -81,6 +82,9 @@ public class RegistroService {
         usuario.setNome(dto.nomeUsuario().trim());
         usuario.setEmail(email);
         usuario.setCargo("ADMIN");
+        usuario.setPerfil(PerfilUsuario.ADMIN);
+        usuario.setExecutaOs(true);
+        usuario.setDeveTrocarSenha(false);
         usuario.setTelefone(dto.telefone());
         usuario.setLider(true);
         usuario.setAtivo(true);
