@@ -135,11 +135,26 @@ Resposta: mesma estrutura do login quando o Supabase devolve sessão; caso a con
   "lider": true,
   "comissaoPercentual": null,
   "corAgenda": null,
-  "fotoUrl": null
+  "fotoUrl": null,
+  "deveTrocarSenha": false,
+  "dono": true,
+  "permissoes": ["CLIENTES", "VEICULOS", "OS", "ORCAMENTOS", "ESTOQUE", "AGENDA", "FINANCEIRO"]
 }
 ```
 
 `perfil` é `ADMIN` ou `FUNCIONARIO`. `executaOs` indica se o usuário aparece como mecânico responsável na OS, independentemente do `cargo` exibido.
+
+### Troca de usuário (Fase B)
+
+| Método | Caminho | Autorização | Descrição |
+| --- | --- | --- | --- |
+| `POST` | `/auth/trocar-usuario` | ADMIN | Valida a senha do usuário e devolve o token dele |
+| `POST` | `/auth/validar-senha` | Autenticado | Valida a senha de um administrador (voltar ao admin) |
+| `POST` | `/auth/alterar-senha` | Autenticado | Altera a senha do usuário logado e limpa `deveTrocarSenha` |
+
+`POST /auth/login` aceita apenas o dono da oficina. Os demais usuários entram pela troca de usuário, a partir da sessão do admin.
+
+`dono` identifica o único usuário que faz login direto no app. `permissoes` lista os módulos liberados: administradores recebem todos; funcionários recebem apenas os marcados no cadastro.
 
 ---
 
@@ -156,6 +171,7 @@ O cadastro de funcionários é feito pelo **administrador** da oficina, já aute
 | `PATCH` | `/usuarios/{id}/status` | ADMIN | Ativa/desativa |
 | `POST` | `/usuarios/{id}/reset-senha` | ADMIN | Gera senha temporária |
 | `GET` | `/mecanicos` | Autenticado | Ativos com `executaOs = true` |
+| `GET` | `/auditoria?usuarioId=&modulo=&de=&ate=` | ADMIN | Relatório de ações (paginado) |
 
 ### Criar funcionário
 
@@ -171,14 +187,19 @@ O cadastro de funcionários é feito pelo **administrador** da oficina, já aute
   "lider": false,
   "comissaoPercentual": 10.00,
   "corAgenda": "#2563eb",
-  "executaOs": true
+  "executaOs": true,
+  "perfil": "FUNCIONARIO",
+  "permissoes": ["OS", "AGENDA", "ESTOQUE"]
 }
 ```
 
 Regras:
 
 - `nome`, `email` e `cargo` são obrigatórios;
-- o perfil é sempre `FUNCIONARIO`; apenas o dono da conta é `ADMIN`;
+- `perfil` aceita `FUNCIONARIO` (padrão) ou `ADMIN`;
+- `permissoes` vale para funcionários e aceita `CLIENTES`, `VEICULOS`, `OS`, `ORCAMENTOS`, `ESTOQUE`, `AGENDA` e `FINANCEIRO`; administradores têm acesso total e não precisam de marcação;
+- somente o dono da oficina pode alterar, desativar ou redefinir a senha da própria conta de dono;
+- o perfil do dono não pode ser rebaixado nem ele pode ser desativado;
 - `executaOs` (padrão `true`) define se o funcionário aparece em `GET /mecanicos`;
 - `senhaInicial`, quando omitida, é gerada pelo back-end e devolvida **uma única vez**;
 - `enviarConvite = true` envia convite por e-mail pelo Supabase (requer SMTP configurado);
@@ -203,6 +224,8 @@ Resposta `201`:
     "ativo": true,
     "executaOs": true,
     "deveTrocarSenha": true,
+    "dono": false,
+    "permissoes": ["OS", "AGENDA", "ESTOQUE"],
     "criadoEm": "2026-11-10T12:00:00Z"
   },
   "senhaTemporaria": "Xy7kPq2mN4rs"
@@ -213,7 +236,7 @@ Resposta `201`:
 
 ### Editar, ativar e redefinir senha
 
-`PUT /usuarios/{id}` aceita `nome`, `telefone`, `cargo`, `especialidades`, `lider`, `comissaoPercentual`, `corAgenda` e `executaOs`. E-mail e perfil não são alteráveis na v1.
+`PUT /usuarios/{id}` aceita `nome`, `telefone`, `cargo`, `especialidades`, `lider`, `comissaoPercentual`, `corAgenda`, `executaOs`, `perfil` e `permissoes`. E-mail não é alterável (é a identidade no Supabase Auth). Ao promover para `ADMIN`, as permissões são ignoradas e o usuário passa a ter acesso total.
 
 ```http
 PATCH /usuarios/{id}/status
@@ -250,16 +273,34 @@ Sem essa variável, as operações que dependem do Supabase Admin retornam `503 
 
 ### Matriz de acesso
 
-| Área | ADMIN | FUNCIONARIO |
-| --- | --- | --- |
-| Clientes, veículos e OS | sim | sim |
-| Catálogo e estoque | sim | sim |
-| Agenda | sim | sim |
-| Equipe (`/usuarios`) | sim | **não** |
-| Financeiro (`/pagamentos`, `/despesas`) | sim | **não** |
-| Relatórios financeiros | sim | **não** |
+| Área | Permissão | ADMIN | FUNCIONARIO |
+| --- | --- | --- | --- |
+| Clientes | `CLIENTES` | sim | se marcada |
+| Veículos | `VEICULOS` | sim | se marcada |
+| Ordens de serviço, catálogo de serviços e vistoria | `OS` | sim | se marcada |
+| Orçamentos | `ORCAMENTOS` | sim | se marcada |
+| Peças, estoque, fornecedores e pedidos de compra | `ESTOQUE` | sim | se marcada |
+| Agenda | `AGENDA` | sim | se marcada |
+| Financeiro (`/pagamentos`, `/despesas`) | `FINANCEIRO` | sim | se marcada |
+| Equipe (`/usuarios`), configurações e auditoria | — | sim | **não** |
+
+Leituras compartilhadas (busca de clientes, veículos e peças) liberam o acesso quando o usuário tem qualquer um dos módulos que usam esses dados (`OS`, `AGENDA`, `ORCAMENTOS` ou `VEICULOS`, conforme o caso).
 
 A restrição é aplicada no back-end com `@PreAuthorize`; esconder o item de menu no front é apenas usabilidade.
+
+### Auditoria
+
+Toda operação de escrita concluída com sucesso (`POST`, `PUT`, `PATCH` e `DELETE`) é registrada na tabela `auditoria`, com:
+
+- usuário (id e nome copiado no momento da ação);
+- data/hora;
+- ação (`CRIAR`, `ATUALIZAR`, `ALTERAR`, `EXCLUIR`);
+- módulo, entidade e id do registro quando houver;
+- método HTTP, caminho e status da resposta.
+
+`GET /auditoria` aceita `usuarioId`, `modulo` (`CLIENTES`, `VEICULOS`, `OS`, `ORCAMENTOS`, `ESTOQUE`, `AGENDA` ou `FINANCEIRO`), `de` e `ate` no formato `AAAA-MM-DD`, além da paginação padrão. É exclusivo de administradores.
+
+Login, notificações e endpoints de documentação não são auditados.
 
 ---
 

@@ -1,16 +1,19 @@
 package com.salvo.salvo_api.dtos;
 
+import com.salvo.salvo_api.domain.usuario.ModuloPermissao;
+import com.salvo.salvo_api.domain.usuario.PerfilUsuario;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
- * Edição dos dados operacionais de um funcionário.
+ * Edição dos dados de um usuário da oficina.
  *
- * E-mail e perfil não são alteráveis neste endpoint na v1:
- * o e-mail é a identidade no Supabase Auth e o perfil é fixo em FUNCIONARIO.
+ * O e-mail não é alterável: é a identidade no Supabase Auth. O perfil e as
+ * permissões podem ser alterados por um administrador.
  */
 public record AtualizarUsuarioDTO(
     String nome,
@@ -26,5 +29,9 @@ public record AtualizarUsuarioDTO(
     @Pattern(regexp = "^$|^#[0-9A-Fa-f]{6}$", message = "Cor da agenda deve estar no formato #RRGGBB")
     String corAgenda,
 
-    Boolean executaOs
+    Boolean executaOs,
+
+    PerfilUsuario perfil,
+
+    List<ModuloPermissao> permissoes
 ) {}

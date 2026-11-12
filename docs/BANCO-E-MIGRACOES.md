@@ -2,7 +2,7 @@
 
 O schema é versionado com **Flyway** e validado pelo Hibernate no start (`ddl-auto=validate`). Este documento descreve as migrações, as regras que vivem no PostgreSQL e como validar tudo localmente.
 
-> **Regra de ouro:** migrações já aplicadas (`V1`, `V2`, `V3`, `V4`) **não são editadas**. Toda mudança nova entra em uma nova versão (`V5`, `V6`...). A entrega atual adicionou a `V4` e a `V5`.
+> **Regra de ouro:** migrações já aplicadas (`V1` a `V5`) **não são editadas**. Toda mudança nova entra em uma nova versão (`V6`, `V7`...). A entrega atual adicionou a `V6`.
 
 ---
 
@@ -14,6 +14,7 @@ O schema é versionado com **Flyway** e validado pelo Hibernate no start (`ddl-a
 - [V3 — numeração de OS](#v3--numeração-de-os)
 - [V4 — SaaS multi-oficina](#v4--saas-multi-oficina)
 - [V5 — equipe e permissões](#v5--equipe-e-permissões)
+- [V6 — permissões por módulo e auditoria](#v6--permissões-por-módulo-e-auditoria)
 - [Regras no banco](#regras-no-banco)
 - [RLS e segurança](#rls-e-segurança)
 - [Validação local](#validação-local)
@@ -31,6 +32,7 @@ O schema é versionado com **Flyway** e validado pelo Hibernate no start (`ddl-a
 | V3 | `V3__numeracao_sequencial_os.sql` | Numeração sequencial e imutável de OS por oficina |
 | V4 | `V4__saas_multi_oficina_features.sql` | Multi-oficina + funcionalidades usadas pelo front |
 | V5 | `V5__cadastro_equipe_e_permissoes.sql` | Perfil de acesso, flag de mecânico e senha temporária |
+| V6 | `V6__permissoes_por_modulo_e_auditoria.sql` | Permissões por módulo, dono da oficina e auditoria |
 
 As migrações são **idempotentes** e usam `if not exists`, `do $$ ... $$` e `on conflict` para poderem rodar em bancos que já têm parte do schema.
 
@@ -325,6 +327,45 @@ Quem já era dono da conta permanece `ADMIN`. Os demais viram `FUNCIONARIO`. `ex
 A V5 é **aditiva e idempotente**. O front antigo continua funcionando: os defaults preservam o comportamento anterior. A autorização por perfil é aplicada na API (`@PreAuthorize` + `PermissaoService`), não no banco.
 
 > A identidade do funcionário é criada no **Supabase Auth** pela Admin API. A V5 não altera o schema `auth`; apenas grava o `auth_user_id` em `usuarios`.
+
+---
+
+## V6 — permissões por módulo e auditoria
+
+Arquivo: `src/main/resources/db/migration/V6__permissoes_por_modulo_e_auditoria.sql`
+
+Libera módulos operacionais por funcionário, marca o dono da oficina e cria a trilha de auditoria.
+
+### `usuarios.dono`
+
+- `dono boolean not null default false`;
+- índice único parcial `ux_usuarios_oficina_dono` garante um dono por oficina;
+- backfill marca o `ADMIN` mais antigo de cada oficina que ainda não tem dono;
+- o dono é o único que faz login direto no app e só ele gerencia a própria conta.
+
+### `usuario_permissoes`
+
+| Coluna | Tipo | Papel |
+| --- | --- | --- |
+| `id` | `bigint identity` | Chave |
+| `usuario_id` | `bigint` | Referência a `usuarios` (`on delete cascade`) |
+| `modulo` | `varchar(30)` | `CLIENTES`, `VEICULOS`, `OS`, `ORCAMENTOS`, `ESTOQUE`, `AGENDA` ou `FINANCEIRO` |
+| `criado_em` | `timestamptz` | Data da concessão |
+
+- `ux_usuario_permissoes_usuario_modulo`: impede módulo repetido para o mesmo usuário;
+- `usuario_permissoes_modulo_chk`: limita os valores aceitos;
+- administradores não precisam de linhas: o `PermissaoService` libera todos os módulos por perfil.
+
+### `auditoria`
+
+- `oficina_id`, `usuario_id`, `usuario_nome`, `acao`, `modulo`, `entidade`, `entidade_id`, `metodo`, `caminho`, `status_http`, `resumo` e `criado_em`;
+- `usuario_nome` é copiado no momento da ação para preservar o histórico;
+- índices por oficina/data, usuário/data e módulo/data;
+- escrita feita pelo `AuditoriaInterceptor` em transação própria (`REQUIRES_NEW`); falha na auditoria não derruba a operação.
+
+### Compatibilidade
+
+A V6 é **aditiva e idempotente**. Nenhuma migração anterior foi alterada. O schema continua compatível com o front antigo; o bloqueio de rotas passou a considerar as permissões por módulo.
 
 ---
 

@@ -83,6 +83,7 @@ public class RegistroService {
         usuario.setEmail(email);
         usuario.setCargo("ADMIN");
         usuario.setPerfil(PerfilUsuario.ADMIN);
+        usuario.setDono(true);
         usuario.setExecutaOs(true);
         usuario.setDeveTrocarSenha(false);
         usuario.setTelefone(dto.telefone());

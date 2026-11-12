@@ -12,7 +12,9 @@ import com.salvo.salvo_api.entities.Oficina;
 import com.salvo.salvo_api.entities.Pagamento;
 import com.salvo.salvo_api.exceptions.RecursoNaoEncontradoException;
 import com.salvo.salvo_api.exceptions.RegraDeNegocioException;
+import com.salvo.salvo_api.entities.Usuario;
 import com.salvo.salvo_api.repositories.DespesaRepository;
+import com.salvo.salvo_api.repositories.UsuarioRepository;
 import com.salvo.salvo_api.repositories.PagamentoRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -37,6 +39,7 @@ public class FinanceiroService {
     private final PagamentoRepository pagamentoRepository;
     private final DespesaRepository despesaRepository;
     private final OficinaContexto oficinaContexto;
+    private final UsuarioRepository usuarioRepository;
 
     @PersistenceContext
     private EntityManager em;
@@ -52,12 +55,15 @@ public class FinanceiroService {
             ? pagamentoRepository.findByOficinaIdOrderByCriadoEmDesc(oficina)
             : pagamentoRepository.findByOficinaIdAndStatusOrderByCriadoEmDesc(
                 oficina, normalizar(status, STATUS_PAGAMENTO, "pagamento"));
-        return lista.stream().map(PagamentoDTO::from).toList();
+        return lista.stream()
+            .map(pagamento -> PagamentoDTO.from(pagamento, nomeCriador(pagamento.getCriadoPor())))
+            .toList();
     }
 
     @Transactional(readOnly = true)
     public PagamentoDTO buscarPagamento(Long id) {
-        return PagamentoDTO.from(exigirPagamento(id));
+        Pagamento pagamento = exigirPagamento(id);
+        return PagamentoDTO.from(pagamento, nomeCriador(pagamento.getCriadoPor()));
     }
 
     @Transactional
@@ -83,7 +89,8 @@ public class FinanceiroService {
         pagamento.setCriadoPor(usuarioId);
         aplicarPagamento(pagamento);
 
-        return PagamentoDTO.from(pagamentoRepository.save(pagamento));
+        Pagamento salvo = pagamentoRepository.save(pagamento);
+        return PagamentoDTO.from(salvo, oficinaContexto.getUsuarioLogado().getNome());
     }
 
     @Transactional
@@ -103,7 +110,8 @@ public class FinanceiroService {
         if (dto.observacoes() != null) pagamento.setObservacoes(limpar(dto.observacoes()));
         aplicarPagamento(pagamento);
 
-        return PagamentoDTO.from(pagamentoRepository.save(pagamento));
+        Pagamento salvo = pagamentoRepository.save(pagamento);
+        return PagamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()));
     }
 
     @Transactional
@@ -111,7 +119,8 @@ public class FinanceiroService {
         Pagamento pagamento = exigirPagamento(id);
         pagamento.setStatus(normalizar(status, STATUS_PAGAMENTO, "pagamento"));
         aplicarPagamento(pagamento);
-        return PagamentoDTO.from(pagamentoRepository.save(pagamento));
+        Pagamento salvo = pagamentoRepository.save(pagamento);
+        return PagamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()));
     }
 
     @Transactional
@@ -130,12 +139,15 @@ public class FinanceiroService {
             ? despesaRepository.findByOficinaIdOrderByCriadoEmDesc(oficina)
             : despesaRepository.findByOficinaIdAndStatusOrderByCriadoEmDesc(
                 oficina, normalizar(status, STATUS_DESPESA, "despesa"));
-        return lista.stream().map(DespesaDTO::from).toList();
+        return lista.stream()
+            .map(despesa -> DespesaDTO.from(despesa, nomeCriador(despesa.getCriadoPor())))
+            .toList();
     }
 
     @Transactional(readOnly = true)
     public DespesaDTO buscarDespesa(Long id) {
-        return DespesaDTO.from(exigirDespesa(id));
+        Despesa despesa = exigirDespesa(id);
+        return DespesaDTO.from(despesa, nomeCriador(despesa.getCriadoPor()));
     }
 
     @Transactional
@@ -158,7 +170,8 @@ public class FinanceiroService {
         despesa.setCriadoPor(usuarioId);
         aplicarDespesa(despesa);
 
-        return DespesaDTO.from(despesaRepository.save(despesa));
+        Despesa salva = despesaRepository.save(despesa);
+        return DespesaDTO.from(salva, oficinaContexto.getUsuarioLogado().getNome());
     }
 
     @Transactional
@@ -175,7 +188,8 @@ public class FinanceiroService {
         if (dto.observacoes() != null) despesa.setObservacoes(limpar(dto.observacoes()));
         aplicarDespesa(despesa);
 
-        return DespesaDTO.from(despesaRepository.save(despesa));
+        Despesa salva = despesaRepository.save(despesa);
+        return DespesaDTO.from(salva, nomeCriador(salva.getCriadoPor()));
     }
 
     @Transactional
@@ -183,7 +197,8 @@ public class FinanceiroService {
         Despesa despesa = exigirDespesa(id);
         despesa.setStatus(normalizar(status, STATUS_DESPESA, "despesa"));
         aplicarDespesa(despesa);
-        return DespesaDTO.from(despesaRepository.save(despesa));
+        Despesa salva = despesaRepository.save(despesa);
+        return DespesaDTO.from(salva, nomeCriador(salva.getCriadoPor()));
     }
 
     @Transactional
@@ -205,6 +220,13 @@ public class FinanceiroService {
         if ("PAGO".equals(despesa.getStatus()) && despesa.getPagoEm() == null) {
             despesa.setPagoEm(OffsetDateTime.now());
         }
+    }
+
+    private String nomeCriador(Long usuarioId) {
+        if (usuarioId == null) return null;
+        return usuarioRepository.findById(usuarioId)
+            .map(Usuario::getNome)
+            .orElse(null);
     }
 
     private Pagamento exigirPagamento(Long id) {

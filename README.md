@@ -20,6 +20,7 @@ O front-end React está em um repositório separado (`pi05`) e consome esta API 
 - [Grupos de endpoints](#grupos-de-endpoints)
 - [Funcionalidades da V4](#funcionalidades-da-v4)
 - [Funcionalidades da V5](#funcionalidades-da-v5)
+- [Funcionalidades da V6](#funcionalidades-da-v6)
 - [Boxes e dados da oficina](#boxes-e-dados-da-oficina)
 - [Banco de dados e Flyway](#banco-de-dados-e-flyway)
 - [Deploy no Render](#deploy-no-render)
@@ -213,9 +214,9 @@ GET /auth/me
 Authorization: Bearer <token>
 ```
 
-Retorna `id`, `oficinaId`, `oficinaNome`, `nome`, `email`, `cargo`, `perfil`, `ativo`, `executaOs`, `telefone`, `especialidades`, `lider`, `comissaoPercentual`, `corAgenda` e `fotoUrl`.
+Retorna `id`, `oficinaId`, `oficinaNome`, `nome`, `email`, `cargo`, `perfil`, `ativo`, `executaOs`, `telefone`, `especialidades`, `lider`, `comissaoPercentual`, `corAgenda`, `fotoUrl`, `deveTrocarSenha`, `dono` e `permissoes`.
 
-`perfil` é `ADMIN` ou `FUNCIONARIO`. `executaOs` indica se o usuário pode ser escolhido como mecânico responsável na OS.
+`perfil` é `ADMIN` ou `FUNCIONARIO`. `executaOs` indica se o usuário pode ser escolhido como mecânico responsável na OS. `dono` identifica o usuário que faz login direto no app; `permissoes` lista os módulos liberados (administradores recebem todos).
 
 ### Rotas públicas
 
@@ -236,7 +237,7 @@ Todas as demais exigem JWT válido.
 - Serviços e repositórios sempre filtram por `oficina_id`.
 - O banco tem RLS habilitado em `public`; a policy permissiva é criada apenas para o papel da API (`current_user`). `anon` e `authenticated` não recebem grants — o front nunca fala direto com o banco.
 - Se um JWT válido não tiver usuário local correspondente **ou** o usuário estiver inativo, a API responde `403 ACESSO_NEGADO`.
-- O perfil (`ADMIN`/`FUNCIONARIO`) é lido do banco, não do JWT, e é aplicado com `@PreAuthorize`. Financeiro e Equipe são exclusivos do `ADMIN`.
+- O perfil (`ADMIN`/`FUNCIONARIO`) e as permissões por módulo são lidos do banco, não do JWT, e aplicados com `@PreAuthorize`. Administradores têm acesso total; funcionários acessam apenas os módulos marcados. Equipe, Configurações e Auditoria são exclusivos do `ADMIN`.
 
 ---
 
@@ -252,6 +253,7 @@ Referência completa, com corpos de requisição e resposta em [docs/API.md](doc
 | Ordens de Serviço | `/ordens-servico` | Lista paginada, detalhe por número, status, itens, histórico |
 | Catálogo | `/servicos`, `/pecas`, `/mecanicos` | Serviços, peças, peças sugeridas e equipe técnica |
 | Equipe | `/usuarios` | Cadastro e gestão de funcionários (somente `ADMIN`)
+| Auditoria | `/auditoria` | Relatório de ações com usuário, data/hora e módulo (somente `ADMIN`)
 | Estoque | `/pecas/{id}/movimentacoes`, `/estoque/movimentacoes` | Entradas, saídas, ajustes e histórico |
 | Vistoria | `/ordens-servico/{numero}/vistoria` | Vistoria de entrada com danos e fotos |
 | Fornecedores | `/fornecedores` | CRUD de fornecedores |
@@ -320,6 +322,23 @@ O plano completo está em [docs/PLANO-EQUIPE.md](docs/PLANO-EQUIPE.md).
 
 ---
 
+## Funcionalidades da V6
+
+A migração `V6__permissoes_por_modulo_e_auditoria.sql` adiciona permissões por módulo e auditoria:
+
+- `usuario_permissoes`: módulos `CLIENTES`, `VEICULOS`, `OS`, `ORCAMENTOS`, `ESTOQUE`, `AGENDA` e `FINANCEIRO` por funcionário;
+- `usuarios.dono`: único usuário que faz login direto no app; o administrador mais antigo de cada oficina é marcado no backfill;
+- `POST/PUT /usuarios` aceitam `perfil` e `permissoes`; administradores têm acesso total;
+- `@PreAuthorize` por módulo em clientes, veículos, catálogo/estoque, OS, vistoria, agenda, financeiro, fornecedores e pedidos de compra;
+- o dono não pode ser rebaixado nem desativado, e só ele gerencia a própria conta;
+- `auditoria` registra toda escrita concluída com sucesso, com usuário, data/hora, ação, módulo, entidade e caminho;
+- `GET /auditoria` com filtros por usuário, módulo e período (somente `ADMIN`);
+- `GET /ordens-servico/{numero}` devolve `criadoPorId` e `criadoPorNome`.
+
+Testes: `PermissaoServiceTest`, `AuditoriaInterceptorTest` e regras do dono em `UsuarioServiceTest`. A validação funcional local confirmou `403` para funcionário sem o módulo e registro de auditoria nas escritas.
+
+---
+
 ## Boxes e dados da oficina
 
 - `GET /boxes` (ativos por padrão, `incluirInativos=true` para todos), `POST /boxes`, `PUT /boxes/{id}` e `DELETE /boxes/{id}` (desativação). Escrita restrita ao `ADMIN`; nome único por oficina.
@@ -339,11 +358,13 @@ As migrações ficam em `src/main/resources/db/migration`:
 | V3 | `V3__numeracao_sequencial_os.sql` | Numeração sequencial e imutável de OS por oficina |
 | V4 | `V4__saas_multi_oficina_features.sql` | Multi-oficina, status, OS, estoque, financeiro, agenda, notificações e RLS |
 | V5 | `V5__cadastro_equipe_e_permissoes.sql` | Perfil de acesso, flag de mecânico e senha temporária |
+| V6 | `V6__permissoes_por_modulo_e_auditoria.sql` | Permissões por módulo, dono da oficina e auditoria |
+| V7 | `V7__orcamentos_campos_comerciais.sql` | Campos comerciais do orçamento |
 
 Regras importantes:
 
-- **Nunca edite V1, V2, V3 ou V4.** Toda mudança nova entra em uma nova versão.
-- A V4 e a V5 são **idempotentes** e **aditivas**.
+- **Nunca edite V1 a V5.** Toda mudança nova entra em uma nova versão.
+- A V4, a V5 e a V6 são **idempotentes** e **aditivas**.
 - Detalhes de triggers, RLS e validação local estão em [docs/BANCO-E-MIGRACOES.md](docs/BANCO-E-MIGRACOES.md).
 
 ---

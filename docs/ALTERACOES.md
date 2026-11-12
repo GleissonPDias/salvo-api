@@ -1,5 +1,101 @@
 # Changelog — Salvô API
 
+## Entrega em andamento — Fase D: relatório de ações e autoria
+
+Escopo: relatório de ações na tela de Equipe e exibição do usuário que criou OS (e demais registros) nas telas.
+
+**Front-end**
+
+- Aba "Relatório de ações" em `/equipe` com filtros por usuário, módulo e período, listagem e exportação CSV via `GET /auditoria`.
+- OS exibe o operador que abriu a ordem a partir de `criadoPorNome` retornado pela API.
+- Orçamentos exibem o responsável (criador) a partir de `criadoPorNome`.
+
+**Back-end**
+
+- Nenhuma mudança de schema; reutiliza `auditoria` e os campos `criadoPor`/`criadoPorNome` já expostos.
+
+---
+
+## Entrega em andamento — Fase C: API de orçamentos
+
+Escopo: orçamentos persistidos no back-end, com itens, status e conversão em OS. A tela de Orçamentos passou a usar a API em modo real (demonstração mantém os dados locais).
+
+**Migração:** `V7__orcamentos_campos_comerciais.sql` (V1–V6 não foram editadas).
+
+### Adicionado
+
+- Entidades `Orcamento`, `OrcamentoItem`, repositórios e `OrcamentoService`.
+- `OrcamentoController` (`/orcamentos`) com `GET`, `GET/{id}`, `POST`, `PUT/{id}`, `DELETE/{id}`, `PATCH/{id}/status` e `POST/{id}/converter`, protegido por `ORCAMENTOS`.
+- DTOs `OrcamentoDTO`, `CriarOrcamentoDTO`, `AtualizarOrcamentoDTO` e `OrcamentoItemDTO`.
+- Colunas `titulo`, `tipo`, `validade_dias`, `desconto_tipo` e `canal_envio` em `orcamentos`.
+
+### Alterado
+
+- `useOrcamentosState` (front) consome `api.orcamentos` em modo real: listagem, criação, edição, exclusão, envio, aprovação, rejeição, conversão e duplicação.
+
+### Observações
+
+- Aprovação pública por token e eventos de timeline permanecem locais por enquanto.
+- Nenhuma migração anterior foi alterada.
+
+---
+
+## Entrega em andamento — Fase B: troca de usuário e senha temporária
+
+Escopo: entrada direta restrita ao dono da oficina, troca de usuário com senha, validação de senha para voltar ao admin, troca obrigatória de senha no primeiro uso e tela de cadastro com tipo e permissões no front.
+
+**Back-end**
+
+- `POST /auth/login` agora rejeita usuários que não sejam o dono da oficina (`422`), com mensagem explicando a troca de usuário.
+- `POST /auth/trocar-usuario` (ADMIN): valida a senha do funcionário e devolve o token dele.
+- `POST /auth/validar-senha`: valida a senha de um administrador (usado para voltar ao admin).
+- `POST /auth/alterar-senha`: altera a senha do usuário logado e limpa `deveTrocarSenha`.
+- `UsuarioRepository.findByEmailIgnoreCase`.
+
+**Front-end**
+
+- Cabeçalho com seletor de usuários da oficina, pedido de senha para entrar e para voltar ao admin, e modal de troca obrigatória de senha no primeiro uso.
+- Cadastro/edição de usuário com tipo (Funcionário/Administrador) e checkboxes de permissões.
+- Menu e rotas filtrados pelas permissões do usuário ativo (além de `adminOnly`).
+
+A autorização e a auditoria continuam sendo validadas no back-end.
+
+---
+
+## Entrega em andamento — Fase A: permissões por módulo e auditoria (V6)
+
+Escopo: autorização por módulo no back-end, marcação do dono da oficina e trilha de auditoria das ações. A troca de usuário no cabeçalho e o bloqueio de login direto de funcionário ficam para a Fase B.
+
+**Migração:** `V6__permissoes_por_modulo_e_auditoria.sql` (V1–V5 não foram editadas).
+
+### Adicionado
+
+- Tabela `usuario_permissoes` (`usuario_id`, `modulo`), com módulos `CLIENTES`, `VEICULOS`, `OS`, `ORCAMENTOS`, `ESTOQUE`, `AGENDA` e `FINANCEIRO`.
+- Coluna `usuarios.dono`, com índice único por oficina. Em bancos existentes, o administrador mais antigo de cada oficina é marcado como dono.
+- Tabela `auditoria` (append-only) e endpoint `GET /auditoria` com filtros por usuário, módulo e período (somente ADMIN).
+- `AuditoriaInterceptor`: registra toda escrita concluída com sucesso, com usuário, data/hora, ação, módulo, entidade e caminho.
+- Enum `ModuloPermissao` e entidade/repositório `UsuarioPermissao`.
+- Testes `PermissaoServiceTest`, `AuditoriaInterceptorTest` e novos casos em `UsuarioServiceTest`.
+
+### Alterado
+
+- `@PreAuthorize` por módulo nos controllers de clientes, veículos, catálogo/estoque, ordens de serviço, vistoria, agenda, financeiro, fornecedores e pedidos de compra. Antes, funcionários tinham acesso operacional livre.
+- `FinanceiroController` deixa de ser `admin-only` e passa a exigir a permissão `FINANCEIRO`.
+- `POST /usuarios` e `PUT /usuarios/{id}` aceitam `perfil` (`ADMIN`/`FUNCIONARIO`) e `permissoes`.
+- Somente o dono pode alterar, desativar ou redefinir a senha da própria conta de dono; o perfil do dono não pode ser rebaixado.
+- `GET /auth/me` e `GET /usuarios` passam a devolver `dono` e `permissoes`.
+- `GET /ordens-servico/{numero}` passa a devolver `criadoPorId` e `criadoPorNome`.
+- `RegistroService` marca o usuário criado no cadastro da oficina como dono.
+- Leituras compartilhadas de clientes, veículos e peças liberam acesso quando o usuário tem `OS`, `AGENDA` ou `ORCAMENTOS`, para não quebrar os formulários.
+
+### Observações
+
+- A autorização é sempre validada no back-end; o front apenas esconderá menus e rotas na próxima fase.
+- A tabela `orcamentos` já existe desde a V1; a API de orçamentos será entregue na Fase C.
+- Nenhuma migração anterior foi alterada.
+
+---
+
 ## Correção — listagem da equipe (`GET /usuarios`)
 
 **Sintoma:** a tela Equipe retornava `500` com `function lower(bytea) does not exist`.

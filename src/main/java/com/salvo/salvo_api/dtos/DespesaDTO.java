@@ -17,14 +17,19 @@ public record DespesaDTO(
     OffsetDateTime pagoEm,
     String observacoes,
     Long criadoPor,
+    String criadoPorNome,
     OffsetDateTime criadoEm,
     OffsetDateTime atualizadoEm
 ) {
     public static DespesaDTO from(Despesa d) {
+        return from(d, null);
+    }
+
+    public static DespesaDTO from(Despesa d, String criadoPorNome) {
         return new DespesaDTO(
             d.getId(), d.getFornecedorId(), d.getDescricao(), d.getCategoria(),
             d.getValor(), d.getStatus(), d.getVencimento(), d.getPagoEm(),
-            d.getObservacoes(), d.getCriadoPor(), d.getCriadoEm(), d.getAtualizadoEm()
+            d.getObservacoes(), d.getCriadoPor(), criadoPorNome, d.getCriadoEm(), d.getAtualizadoEm()
         );
     }
 }

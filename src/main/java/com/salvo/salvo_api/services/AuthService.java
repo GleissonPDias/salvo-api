@@ -2,7 +2,9 @@ package com.salvo.salvo_api.services;
 
 import com.salvo.salvo_api.dtos.LoginRequestDTO;
 import com.salvo.salvo_api.dtos.LoginResponseDTO;
+import com.salvo.salvo_api.entities.Usuario;
 import com.salvo.salvo_api.exceptions.RegraDeNegocioException;
+import com.salvo.salvo_api.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
@@ -11,6 +13,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -18,16 +21,42 @@ public class AuthService {
     private final RestClient restClient;
     private final String authUrl;
     private final String anonKey;
+    private final UsuarioRepository usuarioRepository;
 
     public AuthService(
             @Value("${salvo.security.supabase.auth-url:https://gkgnfxkbwexpihqybcue.supabase.co/auth/v1}") String authUrl,
-            @Value("${salvo.security.supabase.anon-key:}") String anonKey) {
+            @Value("${salvo.security.supabase.anon-key:}") String anonKey,
+            UsuarioRepository usuarioRepository) {
         this.restClient = RestClient.create();
         this.authUrl = authUrl;
         this.anonKey = anonKey;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public LoginResponseDTO login(LoginRequestDTO dto) {
+        LoginResponseDTO response = autenticar(dto.email(), dto.password());
+
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(dto.email().trim().toLowerCase())
+            .orElseThrow(() -> new RegraDeNegocioException(
+                "Usuário não registrado em nenhuma oficina."
+            ));
+
+        if (!Boolean.TRUE.equals(usuario.getAtivo())) {
+            throw new RegraDeNegocioException("Usuário inativo. Procure o administrador da oficina.");
+        }
+        if (!Boolean.TRUE.equals(usuario.getDono())) {
+            throw new RegraDeNegocioException(
+                "Apenas o dono da oficina pode fazer login direto no app. Use a troca de usuário."
+            );
+        }
+        return response;
+    }
+
+    /**
+     * Valida as credenciais no Supabase e devolve o token do usuário.
+     * Usado na troca de usuário e na validação de senha do admin.
+     */
+    public LoginResponseDTO autenticar(String email, String senha) {
         if (anonKey == null || anonKey.isBlank()) {
             throw new RegraDeNegocioException(
                 "A chave anon-key do Supabase precisa ser configurada em salvo.security.supabase.anon-key em application-local.properties."
@@ -40,27 +69,22 @@ public class AuthService {
                     .header("apikey", anonKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(Map.of(
-                            "email", dto.email(),
-                            "password", dto.password()
+                            "email", email.trim().toLowerCase(),
+                            "password", senha
                     ))
                     .retrieve()
                     .body(LoginResponseDTO.class);
         } catch (RestClientResponseException ex) {
             throw new RegraDeNegocioException(
-                "Falha na autenticação com Supabase (" + ex.getStatusCode() + "): " + ex.getResponseBodyAsString()
+                "Credenciais inválidas (" + ex.getStatusCode() + ")."
             );
         } catch (Exception ex) {
             throw new RegraDeNegocioException("Erro ao conectar ao Supabase Auth: " + ex.getMessage());
         }
     }
 
-    /**
-     * Cria a identidade no Supabase Auth.
-     *
-     * A resposta varia conforme a confirmação de e-mail estar habilitada:
-     * com sessão, vem access_token/user; sem sessão, vem apenas o usuário.
-     */
     public Map<String, Object> signup(String email, String password, String nomeUsuario, String nomeOficina) {
+        // unchanged
         if (anonKey == null || anonKey.isBlank()) {
             throw new RegraDeNegocioException(
                 "A chave anon-key do Supabase precisa ser configurada em salvo.security.supabase.anon-key."

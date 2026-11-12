@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,6 +25,7 @@ public class ClienteController {
     private final ClienteService clienteService;
 
     @GetMapping
+    @PreAuthorize("@permissoes.podeAlgum('CLIENTES','OS','AGENDA','ORCAMENTOS')")
     @Operation(summary = "Lista clientes com paginação e busca por nome/cpf")
     public Page<ClienteDTO> listar(
         @RequestParam(required = false) String q,
@@ -33,6 +35,7 @@ public class ClienteController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@permissoes.podeAlgum('CLIENTES','OS','AGENDA','ORCAMENTOS')")
     @Operation(summary = "Busca cliente por ID")
     public ClienteDTO buscar(@PathVariable Long id) {
         return clienteService.buscarPorId(id);
@@ -40,12 +43,14 @@ public class ClienteController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("@permissoes.pode('CLIENTES')")
     @Operation(summary = "Cadastra um novo cliente")
     public ClienteDTO criar(@RequestBody @Valid CriarClienteDTO dto) {
         return clienteService.criar(dto);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@permissoes.pode('CLIENTES')")
     @Operation(summary = "Atualiza os dados de um cliente")
     public ClienteDTO atualizar(@PathVariable Long id, @RequestBody AtualizarClienteDTO dto) {
         return clienteService.atualizar(id, dto);
@@ -53,6 +58,7 @@ public class ClienteController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@permissoes.pode('CLIENTES')")
     @Operation(summary = "Desativa um cliente")
     public void desativar(@PathVariable Long id) {
         clienteService.desativar(id);

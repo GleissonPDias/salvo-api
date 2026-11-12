@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
@@ -18,6 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/agendamentos")
+@PreAuthorize("@permissoes.pode('AGENDA')")
 @RequiredArgsConstructor
 @Tag(name = "Agenda", description = "Agendamentos de serviços da oficina")
 public class AgendaController {

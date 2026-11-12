@@ -20,15 +20,20 @@ public record PagamentoDTO(
     OffsetDateTime pagoEm,
     String observacoes,
     Long criadoPor,
+    String criadoPorNome,
     OffsetDateTime criadoEm,
     OffsetDateTime atualizadoEm
 ) {
     public static PagamentoDTO from(Pagamento p) {
+        return from(p, null);
+    }
+
+    public static PagamentoDTO from(Pagamento p, String criadoPorNome) {
         return new PagamentoDTO(
             p.getId(), p.getOrdemServicoId(), p.getOrcamentoId(), p.getClienteId(),
             p.getDescricao(), p.getValor(), p.getFormaPagamento(), p.getParcelas(),
             p.getStatus(), p.getVencimento(), p.getPagoEm(), p.getObservacoes(),
-            p.getCriadoPor(), p.getCriadoEm(), p.getAtualizadoEm()
+            p.getCriadoPor(), criadoPorNome, p.getCriadoEm(), p.getAtualizadoEm()
         );
     }
 }

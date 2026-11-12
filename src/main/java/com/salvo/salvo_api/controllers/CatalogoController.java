@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,6 +35,7 @@ public class CatalogoController {
     /* ------------------------------------------------------------------ */
 
     @GetMapping("/servicos")
+    @PreAuthorize("@permissoes.podeAlgum('OS','ORCAMENTOS','ESTOQUE')")
     @Operation(summary = "Busca serviços no catálogo da oficina (inclui inativos)")
     public List<ServicoDTO> buscarServicos(@RequestParam(defaultValue = "") String q) {
         return catalogoService.listarServicos(q);
@@ -41,12 +43,14 @@ public class CatalogoController {
 
     @PostMapping("/servicos")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("@permissoes.pode('OS')")
     @Operation(summary = "Cadastra um serviço")
     public ServicoDTO criarServico(@RequestBody @Valid CriarServicoDTO dto) {
         return catalogoService.criarServico(dto);
     }
 
     @PutMapping("/servicos/{id}")
+    @PreAuthorize("@permissoes.pode('OS')")
     @Operation(summary = "Atualiza um serviço")
     public ServicoDTO atualizarServico(@PathVariable Long id, @RequestBody @Valid AtualizarServicoDTO dto) {
         return catalogoService.atualizarServico(id, dto);
@@ -54,18 +58,21 @@ public class CatalogoController {
 
     @DeleteMapping("/servicos/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@permissoes.pode('OS')")
     @Operation(summary = "Desativa um serviço (exclusão lógica)")
     public void desativarServico(@PathVariable Long id) {
         catalogoService.desativarServico(id);
     }
 
     @GetMapping("/servicos/{id}/pecas-sugeridas")
+    @PreAuthorize("@permissoes.pode('OS')")
     @Operation(summary = "Lista as peças sugeridas para um serviço")
     public List<PecaDTO> listarPecasSugeridas(@PathVariable Long id) {
         return catalogoService.listarPecasSugeridas(id);
     }
 
     @PutMapping("/servicos/{id}/pecas-sugeridas")
+    @PreAuthorize("@permissoes.pode('OS')")
     @Operation(summary = "Substitui as peças sugeridas de um serviço")
     public List<PecaDTO> substituirPecasSugeridas(
         @PathVariable Long id,
@@ -79,6 +86,7 @@ public class CatalogoController {
     /* ------------------------------------------------------------------ */
 
     @GetMapping("/pecas")
+    @PreAuthorize("@permissoes.podeAlgum('ESTOQUE','OS')")
     @Operation(summary = "Busca peças no catálogo da oficina (inclui inativas)")
     public List<PecaDTO> buscarPecas(@RequestParam(defaultValue = "") String q) {
         return catalogoService.listarPecas(q);
@@ -86,12 +94,14 @@ public class CatalogoController {
 
     @PostMapping("/pecas")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("@permissoes.pode('ESTOQUE')")
     @Operation(summary = "Cadastra uma peça")
     public PecaDTO criarPeca(@RequestBody @Valid CriarPecaDTO dto) {
         return catalogoService.criarPeca(dto);
     }
 
     @PutMapping("/pecas/{id}")
+    @PreAuthorize("@permissoes.pode('ESTOQUE')")
     @Operation(summary = "Atualiza uma peça")
     public PecaDTO atualizarPeca(@PathVariable Long id, @RequestBody @Valid AtualizarPecaDTO dto) {
         return catalogoService.atualizarPeca(id, dto);
@@ -99,6 +109,7 @@ public class CatalogoController {
 
     @DeleteMapping("/pecas/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@permissoes.pode('ESTOQUE')")
     @Operation(summary = "Desativa uma peça (exclusão lógica)")
     public void desativarPeca(@PathVariable Long id) {
         catalogoService.desativarPeca(id);
@@ -110,6 +121,7 @@ public class CatalogoController {
 
     @PostMapping("/pecas/{id}/movimentacoes")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("@permissoes.pode('ESTOQUE')")
     @Operation(summary = "Registra uma movimentação de estoque da peça")
     public MovimentacaoEstoqueRespostaDTO movimentar(
         @PathVariable Long id,
@@ -119,6 +131,7 @@ public class CatalogoController {
     }
 
     @GetMapping("/pecas/{id}/movimentacoes")
+    @PreAuthorize("@permissoes.pode('ESTOQUE')")
     @Operation(summary = "Histórico de movimentações de uma peça")
     public List<MovimentacaoEstoqueRespostaDTO> movimentacoesDaPeca(
         @PathVariable Long id,
@@ -128,6 +141,7 @@ public class CatalogoController {
     }
 
     @GetMapping("/estoque/movimentacoes")
+    @PreAuthorize("@permissoes.pode('ESTOQUE')")
     @Operation(summary = "Histórico de movimentações de estoque da oficina")
     public List<MovimentacaoEstoqueRespostaDTO> movimentacoes(
         @RequestParam(defaultValue = "100") int limite

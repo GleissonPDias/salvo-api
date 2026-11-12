@@ -9,12 +9,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/fornecedores")
+@PreAuthorize("@permissoes.pode('ESTOQUE')")
 @RequiredArgsConstructor
 @Tag(name = "Fornecedores", description = "Cadastro de fornecedores de peças e serviços")
 public class FornecedorController {

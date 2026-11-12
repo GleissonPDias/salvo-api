@@ -43,6 +43,11 @@ public class Usuario {
     @Column(name = "deve_trocar_senha", nullable = false)
     private Boolean deveTrocarSenha = false;
 
+    // Dono da oficina: único usuário que faz login direto no app.
+    // Os demais entram pela troca de usuário, a partir da sessão do dono.
+    @Column(nullable = false)
+    private Boolean dono = false;
+
     private String telefone;
 
     private String especialidades;

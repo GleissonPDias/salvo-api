@@ -225,7 +225,111 @@ A V5 é compatível com o front antigo: os defaults preservam o comportamento at
 
 ---
 
-## 9. Próximos passos
+## 9. Acesso por troca de usuário, permissões e auditoria (v2)
+
+Decisões confirmadas pelo dono da oficina:
+
+1. **Administradores:** o dono pode criar outros administradores, mas só o próprio dono faz login direto no app. Administradores criados por ele entram pela troca de usuário.
+2. **Login de funcionário:** funcionários não fazem login direto. Eles são acessados só pela troca de usuário, a partir da sessão do admin.
+3. **Voltar para o admin:** exige a senha do admin, para impedir que um funcionário acesse a conta do admin indevidamente.
+4. **Permissões por checkbox:** Clientes, Veículos, Ordens de serviço, Orçamentos, Estoque, Agenda e Financeiro. Equipe, Configurações e gestão de usuários são sempre exclusivos de administradores.
+5. **Senha inicial:** o funcionário deve trocar a senha no primeiro uso da troca de usuário.
+6. **Orçamentos:** passam a ter API própria, com dados persistidos (não mais locais).
+7. **Autoria:** criação de OS, orçamento, lançamentos financeiros e movimentações de estoque registram o usuário que fez a ação. No formulário, o campo vem preenchido com o usuário logado.
+8. **Log de ações:** a tela de Usuários terá um relatório de todas as ações feitas no app, com data/hora e nome do usuário.
+
+### 9.1 Fluxo de troca de usuário
+
+- O cabeçalho mostra o usuário ativo e o seu perfil (Administrador ou Funcionário), com um seletor.
+- Ao escolher um funcionário, o front pede a senha dele. O back-end valida a senha no Supabase (grant de senha) e devolve a sessão do funcionário.
+- A sessão do admin é mantida em memória e no armazenamento local do navegador. Voltar para o admin pede a senha do admin.
+- A permissão efetiva é sempre a do usuário ativo, lida do banco a cada requisição. O front só esconde menus e rotas; a API recusa o acesso (403).
+- Se o funcionário ainda tiver a senha temporária, o sistema obriga a troca antes de liberar as telas.
+
+### 9.2 Modelo de dados (V6, nova migração)
+
+- Tabela `usuario_permissoes` (`usuario_id`, `modulo`), com `modulo` em: `CLIENTES`, `VEICULOS`, `OS`, `ORCAMENTOS`, `ESTOQUE`, `AGENDA`, `FINANCEIRO`.
+- Coluna `criado_por` (usuário) em `ordens_servico`, `orcamentos` (nova tabela), `pagamentos`, `despesas` e `movimentacoes_estoque`, já existentes ou criadas na V6.
+- Tabela `auditoria` (`id`, `oficina_id`, `usuario_id`, `usuario_nome`, `acao`, `entidade`, `entidade_id`, `resumo`, `criado_em`), append-only.
+- Nenhuma migração anterior (V1 a V5) é editada.
+
+### 9.3 Back-end
+
+- Autorização por módulo: `@PreAuthorize("@permissoes.pode('OS')")` nos controllers, substituindo o acesso livre dos endpoints operacionais.
+- Endpoint de troca: `POST /auth/trocar-usuario` (`usuarioId`, `senha`) para o funcionário; `POST /auth/voltar-admin` (`senha`) para o admin.
+- `POST /auth/login` recusa usuários com perfil `FUNCIONARIO` (retorna erro explicando a troca de usuário).
+- Auditoria: interceptor/aspecto em toda operação de escrita (POST, PUT, PATCH, DELETE) que grava usuário, data/hora, ação e entidade. Leitura: `GET /auditoria` (somente admin), com filtros por período, usuário e módulo.
+- Orçamentos: CRUD completo (itens, descontos, validade, aprovação, conversão em OS), persistido, com `criado_por`.
+
+### 9.4 Front-end
+
+- Cadastro de usuário: campo **Tipo** (Funcionário / Administrador) e checkboxes de permissões (visíveis só para admin).
+- Cabeçalho: seletor de usuário, modal de senha para entrar como funcionário e para voltar ao admin.
+- Menu e rotas filtrados pelas permissões do usuário ativo.
+- Orçamentos: trocar o estado local pelo `api.orcamentos`.
+- Campo "Criado por" (somente leitura) preenchido com o usuário logado em OS, orçamento, lançamentos e movimentações.
+- Tela de Usuários: aba "Relatório de ações" com filtros e exportação CSV.
+
+### 9.5 Fases de entrega
+
+1. **Fase A:** V6, permissões, `criado_por` e auditoria no back-end.
+2. **Fase B:** troca de usuário (back-end e cabeçalho), senha temporária e bloqueio de login direto de funcionário.
+3. **Fase C:** API de orçamentos e migração da tela de Orçamentos.
+4. **Fase D:** relatório de ações na tela de Usuários e campo "Criado por" nas telas.
+5. **Testes:** cada fase com testes de back-end (autorização e auditoria) e teste de ponta a ponta no navegador.
+
+### 9.6 Riscos
+
+| Risco | Mitigação |
+| --- | --- |
+| Funcionário acessar a conta do admin | Voltar para admin exige senha do admin; API recusa rotas sem permissão |
+| Senha do funcionário exposta | A senha é enviada só ao back-end, por HTTPS; nunca é armazenada no navegador |
+| Auditoria incompleta | Interceptor único em escritas, com teste para cada módulo |
+| Permissões só no front | Verificação obrigatória no back-end (`@PreAuthorize`) |
+| Orçamentos locais já existentes | Migração não automática; avisar que orçamentos locais não são importados |
+
+### 9.7 Status de implementação
+
+**Fase A — concluída (sem commit, conforme pedido):**
+
+- migração `V6__permissoes_por_modulo_e_auditoria.sql` validada em PostgreSQL 17 (Flyway e `ddl-auto=validate`);
+- `usuario_permissoes`, `usuarios.dono` e `auditoria`;
+- `@PreAuthorize` por módulo em todos os controllers operacionais;
+- auditoria automática de escritas via `AuditoriaInterceptor`;
+- `GET /auditoria` com filtros (ADMIN);
+- `POST/PUT /usuarios` com `perfil` e `permissoes`;
+- `GET /auth/me` e `GET /usuarios` com `dono` e `permissoes`;
+- testes: 24 no total, incluindo `PermissaoServiceTest`, `AuditoriaInterceptorTest` e regras do dono em `UsuarioServiceTest`;
+- validação funcional local: ADMIN acessa tudo; FUNCIONARIO com apenas `CLIENTES` recebe `403` em veículos, OS, financeiro, equipe e auditoria; escrita gera registro de auditoria com nome do usuário.
+
+**Fase B — concluída (sem commit, conforme pedido):**
+
+- `POST /auth/login` restrito ao dono da oficina;
+- `POST /auth/trocar-usuario`, `POST /auth/validar-senha` e `POST /auth/alterar-senha`;
+- cabeçalho com seletor de usuários, pedido de senha para entrar e voltar, e troca obrigatória de senha no primeiro uso;
+- cadastro/edição com tipo (Funcionário/Administrador) e checkboxes de permissões;
+- menu e rotas filtrados pelas permissões do usuário ativo;
+- build do front validado (`vite build` e `eslint` sem erros).
+
+**Fase C — concluída (sem commit, conforme pedido):**
+
+- migração `V7__orcamentos_campos_comerciais.sql`;
+- `OrcamentoController` com CRUD, status e conversão;
+- front `useOrcamentosState` consumindo `api.orcamentos` em modo real;
+- build do front validado.
+
+**Fase D — concluída (sem commit, conforme pedido):**
+
+- aba "Relatório de ações" em `/equipe` com filtros e exportação CSV;
+- OS exibe o operador de abertura a partir de `criadoPorNome`;
+- orçamentos exibem o responsável a partir de `criadoPorNome`;
+- build do front validado.
+
+Todas as fases A a D foram implementadas. O módulo de orçamentos permanece com aprovação pública por token e timeline locais como previsto.
+
+---
+
+## 10. Próximos passos (histórico v1)
 
 1. Implementar a V5 e o back-end de usuários.
 2. Implementar a tela de Equipe e as guardas no front.

@@ -20,7 +20,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@PreAuthorize("@permissoes.isAdmin()")
+@PreAuthorize("@permissoes.pode('FINANCEIRO')")
 @Tag(name = "Financeiro", description = "Contas a receber (pagamentos) e a pagar (despesas)")
 public class FinanceiroController {
 

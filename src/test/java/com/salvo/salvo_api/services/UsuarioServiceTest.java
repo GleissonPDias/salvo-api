@@ -1,14 +1,19 @@
 package com.salvo.salvo_api.services;
 
 import com.salvo.salvo_api.configs.OficinaContexto;
+import com.salvo.salvo_api.domain.usuario.ModuloPermissao;
 import com.salvo.salvo_api.domain.usuario.PerfilUsuario;
+import com.salvo.salvo_api.dtos.AtualizarUsuarioDTO;
 import com.salvo.salvo_api.dtos.CriarUsuarioDTO;
 import com.salvo.salvo_api.dtos.MecanicoDTO;
 import com.salvo.salvo_api.dtos.UsuarioCriadoDTO;
 import com.salvo.salvo_api.entities.Oficina;
 import com.salvo.salvo_api.entities.Usuario;
+import com.salvo.salvo_api.entities.UsuarioPermissao;
+import com.salvo.salvo_api.exceptions.AcessoNegadoException;
 import com.salvo.salvo_api.exceptions.RegraDeNegocioException;
 import com.salvo.salvo_api.repositories.OficinaRepository;
+import com.salvo.salvo_api.repositories.UsuarioPermissaoRepository;
 import com.salvo.salvo_api.repositories.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +54,9 @@ class UsuarioServiceTest {
     private SupabaseAdminService supabaseAdminService;
 
     @Mock
+    private UsuarioPermissaoRepository usuarioPermissaoRepository;
+
+    @Mock
     private PermissaoService permissaoService;
 
     private UsuarioService service;
@@ -59,6 +67,7 @@ class UsuarioServiceTest {
     void setUp() {
         service = new UsuarioService(
             usuarioRepository,
+            usuarioPermissaoRepository,
             oficinaRepository,
             oficinaContexto,
             supabaseAdminService,
@@ -86,7 +95,8 @@ class UsuarioServiceTest {
 
         CriarUsuarioDTO dto = new CriarUsuarioDTO(
             "Mecânico", "mecanico@teste.com", "12345678", false,
-            "11999999999", "Mecânico", "Motor", false, BigDecimal.ZERO, "#2563eb", true
+            "11999999999", "Mecânico", "Motor", false, BigDecimal.ZERO, "#2563eb", true,
+            null, null
         );
 
         assertThatThrownBy(() -> service.criar(dto))
@@ -115,7 +125,7 @@ class UsuarioServiceTest {
         CriarUsuarioDTO dto = new CriarUsuarioDTO(
             "João Mecânico", "Mecanico@Teste.com", null, false,
             "11999999999", "Mecânico", "Motor e freios", true,
-            new BigDecimal("10.00"), "#2563eb", true
+            new BigDecimal("10.00"), "#2563eb", true, null, null
         );
 
         UsuarioCriadoDTO resultado = service.criar(dto);
@@ -148,7 +158,8 @@ class UsuarioServiceTest {
 
         CriarUsuarioDTO dto = new CriarUsuarioDTO(
             "Mecânico", "mecanico@teste.com", "12345678", false,
-            null, "Mecânico", null, false, null, null, true
+            null, "Mecânico", null, false, null, null, true,
+            null, null
         );
 
         assertThatThrownBy(() -> service.criar(dto))
@@ -210,5 +221,130 @@ class UsuarioServiceTest {
         assertThat(resultado).hasSize(1);
         assertThat(resultado.get(0).nome()).isEqualTo("Mecânico");
         assertThat(resultado.get(0).lider()).isTrue();
+    }
+
+    @Test
+    void criarFuncionarioSalvaSomenteAsPermissoesMarcadas() {
+        when(oficinaContexto.getUsuarioLogado()).thenReturn(admin);
+        when(usuarioRepository.existsByEmailIgnoreCase("mecanico@teste.com")).thenReturn(false);
+        when(oficinaRepository.getReferenceById(1L)).thenReturn(oficina);
+
+        UUID authId = UUID.randomUUID();
+        when(supabaseAdminService.criarUsuario(eq("mecanico@teste.com"), anyString(), anyMap()))
+            .thenReturn(authId);
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+            Usuario salvo = invocation.getArgument(0);
+            salvo.setId(20L);
+            return salvo;
+        });
+
+        CriarUsuarioDTO dto = new CriarUsuarioDTO(
+            "Mecânico", "mecanico@teste.com", "12345678", false,
+            null, "Mecânico", null, false, null, null, true,
+            PerfilUsuario.FUNCIONARIO,
+            List.of(ModuloPermissao.OS, ModuloPermissao.AGENDA)
+        );
+
+        UsuarioCriadoDTO resultado = service.criar(dto);
+
+        assertThat(resultado.usuario().perfil()).isEqualTo(PerfilUsuario.FUNCIONARIO);
+        assertThat(resultado.usuario().permissoes())
+            .containsExactlyInAnyOrder(ModuloPermissao.OS, ModuloPermissao.AGENDA);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<UsuarioPermissao>> captor = ArgumentCaptor.forClass(List.class);
+        verify(usuarioPermissaoRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).extracting(UsuarioPermissao::getModulo)
+            .containsExactlyInAnyOrder(ModuloPermissao.OS, ModuloPermissao.AGENDA);
+    }
+
+    @Test
+    void criarAdminNaoGravaPermissoesEApareceComAcessoTotal() {
+        when(oficinaContexto.getUsuarioLogado()).thenReturn(admin);
+        when(usuarioRepository.existsByEmailIgnoreCase("novo.admin@teste.com")).thenReturn(false);
+        when(oficinaRepository.getReferenceById(1L)).thenReturn(oficina);
+
+        UUID authId = UUID.randomUUID();
+        when(supabaseAdminService.criarUsuario(eq("novo.admin@teste.com"), anyString(), anyMap()))
+            .thenReturn(authId);
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+            Usuario salvo = invocation.getArgument(0);
+            salvo.setId(21L);
+            return salvo;
+        });
+
+        CriarUsuarioDTO dto = new CriarUsuarioDTO(
+            "Novo Admin", "novo.admin@teste.com", "12345678", false,
+            null, "Administrador", null, false, null, null, false,
+            PerfilUsuario.ADMIN,
+            List.of(ModuloPermissao.CLIENTES)
+        );
+
+        UsuarioCriadoDTO resultado = service.criar(dto);
+
+        assertThat(resultado.usuario().perfil()).isEqualTo(PerfilUsuario.ADMIN);
+        assertThat(resultado.usuario().dono()).isFalse();
+        assertThat(resultado.usuario().permissoes())
+            .containsExactlyInAnyOrder(ModuloPermissao.values());
+        verify(usuarioPermissaoRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void adminQueNaoEDonoNaoPodeGerenciarContaDoDono() {
+        Usuario dono = new Usuario();
+        dono.setId(11L);
+        dono.setOficina(oficina);
+        dono.setDono(true);
+        dono.setPerfil(PerfilUsuario.ADMIN);
+
+        when(oficinaContexto.getUsuarioLogado()).thenReturn(admin);
+        when(usuarioRepository.findByIdAndOficinaId(11L, 1L)).thenReturn(Optional.of(dono));
+
+        AtualizarUsuarioDTO dto = new AtualizarUsuarioDTO(
+            "Nome novo", null, null, null, null, null, null, null, null, null
+        );
+
+        assertThatThrownBy(() -> service.atualizar(11L, dto))
+            .isInstanceOf(AcessoNegadoException.class)
+            .hasMessageContaining("dono da oficina");
+
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    void naoPermiteRebaixarOperfilDoDono() {
+        Usuario dono = new Usuario();
+        dono.setId(11L);
+        dono.setOficina(oficina);
+        dono.setDono(true);
+        dono.setPerfil(PerfilUsuario.ADMIN);
+
+        when(oficinaContexto.getUsuarioLogado()).thenReturn(dono);
+        when(usuarioRepository.findByIdAndOficinaId(11L, 1L)).thenReturn(Optional.of(dono));
+
+        AtualizarUsuarioDTO dto = new AtualizarUsuarioDTO(
+            null, null, null, null, null, null, null, null,
+            PerfilUsuario.FUNCIONARIO, null
+        );
+
+        assertThatThrownBy(() -> service.atualizar(11L, dto))
+            .isInstanceOf(RegraDeNegocioException.class)
+            .hasMessageContaining("perfil do dono");
+    }
+
+    @Test
+    void adminQueNaoEDonoNaoPodeDesativarODono() {
+        Usuario dono = new Usuario();
+        dono.setId(11L);
+        dono.setOficina(oficina);
+        dono.setDono(true);
+        dono.setPerfil(PerfilUsuario.ADMIN);
+
+        when(oficinaContexto.getUsuarioLogado()).thenReturn(admin);
+        when(usuarioRepository.findByIdAndOficinaId(11L, 1L)).thenReturn(Optional.of(dono));
+
+        assertThatThrownBy(() -> service.alterarStatus(11L, false))
+            .isInstanceOf(AcessoNegadoException.class)
+            .hasMessageContaining("dono da oficina");
     }
 }
