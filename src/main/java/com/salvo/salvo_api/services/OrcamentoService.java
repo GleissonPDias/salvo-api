@@ -152,6 +152,7 @@ public class OrcamentoService {
         item.setDescricao(dto.descricao().trim());
         item.setQuantidade(dto.quantidade());
         item.setValorUnitario(dto.valorUnitario());
+        item.setTempoEstimadoHoras(dto.tempoEstimadoHoras());
         return item;
     }
 

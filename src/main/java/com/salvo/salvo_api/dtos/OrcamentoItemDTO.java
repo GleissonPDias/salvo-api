@@ -12,7 +12,8 @@ public record OrcamentoItemDTO(
     String codigo,
     String descricao,
     BigDecimal quantidade,
-    BigDecimal valorUnitario
+    BigDecimal valorUnitario,
+    BigDecimal tempoEstimadoHoras
 ) {
     public static OrcamentoItemDTO from(OrcamentoItem item) {
         return new OrcamentoItemDTO(
@@ -23,7 +24,8 @@ public record OrcamentoItemDTO(
             item.getCodigo(),
             item.getDescricao(),
             item.getQuantidade(),
-            item.getValorUnitario()
+            item.getValorUnitario(),
+            item.getTempoEstimadoHoras()
         );
     }
 }

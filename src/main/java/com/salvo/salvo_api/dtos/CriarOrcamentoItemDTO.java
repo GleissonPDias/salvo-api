@@ -18,5 +18,6 @@ public record CriarOrcamentoItemDTO(
     @Positive(message = "Quantidade deve ser maior que zero")
     BigDecimal quantidade,
     @NotNull(message = "Valor unitário é obrigatório")
-    BigDecimal valorUnitario
+    BigDecimal valorUnitario,
+    BigDecimal tempoEstimadoHoras
 ) {}

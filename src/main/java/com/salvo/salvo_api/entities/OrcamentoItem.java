@@ -47,6 +47,9 @@ public class OrcamentoItem {
     @Column(name = "valor_unitario", nullable = false, precision = 12, scale = 2)
     private BigDecimal valorUnitario;
 
+    @Column(name = "tempo_estimado_horas", precision = 8, scale = 2)
+    private BigDecimal tempoEstimadoHoras;
+
     @Column(name = "criado_em", nullable = false, updatable = false)
     private OffsetDateTime criadoEm;
 
