@@ -1,5 +1,13 @@
 # Changelog — Salvô API
 
+## Entrega em andamento — V8: libera itens avulsos no orçamento
+
+Remove a restrição `orcamento_itens_check` que exigia `peca_id` ou `servico_id` preenchido, permitindo itens com descrição livre (serviço/peça avulsa) no orçamento.
+
+**Migração:** `V8__orcamento_itens_permite_itens_avulsos.sql` (V1–V7 não foram editadas).
+
+---
+
 ## Entrega em andamento — Fase D: relatório de ações e autoria
 
 Escopo: relatório de ações na tela de Equipe e exibição do usuário que criou OS (e demais registros) nas telas.

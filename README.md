@@ -360,6 +360,7 @@ As migrações ficam em `src/main/resources/db/migration`:
 | V5 | `V5__cadastro_equipe_e_permissoes.sql` | Perfil de acesso, flag de mecânico e senha temporária |
 | V6 | `V6__permissoes_por_modulo_e_auditoria.sql` | Permissões por módulo, dono da oficina e auditoria |
 | V7 | `V7__orcamentos_campos_comerciais.sql` | Campos comerciais do orçamento |
+| V8 | `V8__orcamento_itens_permite_itens_avulsos.sql` | Permite itens avulsos no orçamento |
 
 Regras importantes:
 
