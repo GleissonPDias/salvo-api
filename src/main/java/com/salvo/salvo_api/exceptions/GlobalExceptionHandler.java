@@ -98,7 +98,7 @@ public class GlobalExceptionHandler {
         if (causa != null && causa.contains("ux_os_vistoria_danos_area_tipo")) {
             return new ErroDTO("CONFLITO", "Dano já registrado para esta área e tipo de avaria");
         }
-        return new ErroDTO("CONFLITO", "Dado duplicado");
+        return new ErroDTO("CONFLITO", "Dado duplicado", causa == null ? List.of() : List.of(causa));
     }
 
     @ExceptionHandler(Exception.class)
