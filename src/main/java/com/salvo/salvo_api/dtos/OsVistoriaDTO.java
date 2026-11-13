@@ -13,8 +13,7 @@ public record OsVistoriaDTO(
     String observacoes,
     OffsetDateTime realizadaEm,
     Long realizadaPor,
-    List<VistoriaDanoDTO> danos,
-    List<VistoriaFotoDTO> fotos
+    List<VistoriaDanoDTO> danos
 ) {
     public static OsVistoriaDTO from(OsVistoria v) {
         return new OsVistoriaDTO(
@@ -25,14 +24,13 @@ public record OsVistoriaDTO(
             v.getObservacoes(),
             v.getRealizadaEm(),
             v.getRealizadaPor(),
-            v.getDanos().stream().map(VistoriaDanoDTO::from).toList(),
-            v.getFotos().stream().map(VistoriaFotoDTO::from).toList()
+            v.getDanos().stream().map(VistoriaDanoDTO::from).toList()
         );
     }
 
     public static OsVistoriaDTO vazia(Long ordemServicoId) {
         return new OsVistoriaDTO(
-            null, ordemServicoId, false, null, null, null, null, List.of(), List.of()
+            null, ordemServicoId, false, null, null, null, null, List.of()
         );
     }
 }

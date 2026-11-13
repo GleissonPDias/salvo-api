@@ -46,9 +46,6 @@ public class OsVistoria {
     @OneToMany(mappedBy = "vistoria", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OsVistoriaDano> danos = new ArrayList<>();
 
-    @OneToMany(mappedBy = "vistoria", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OsVistoriaFoto> fotos = new ArrayList<>();
-
     @PrePersist
     private void prePersist() {
         criadoEm = OffsetDateTime.now();

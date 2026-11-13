@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/ordens-servico")
 @PreAuthorize("@permissoes.pode('OS')")
 @RequiredArgsConstructor
-@Tag(name = "Vistoria de entrada", description = "Vistoria, avarias e fotos da OS")
+@Tag(name = "Vistoria de entrada", description = "Vistoria e avarias da OS")
 public class OsVistoriaController {
 
     private final OsVistoriaService vistoriaService;

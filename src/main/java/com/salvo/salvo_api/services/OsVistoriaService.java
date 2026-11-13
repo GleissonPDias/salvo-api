@@ -4,11 +4,9 @@ import com.salvo.salvo_api.configs.OficinaContexto;
 import com.salvo.salvo_api.dtos.OsVistoriaDTO;
 import com.salvo.salvo_api.dtos.RegistrarVistoriaDTO;
 import com.salvo.salvo_api.dtos.VistoriaDanoDTO;
-import com.salvo.salvo_api.dtos.VistoriaFotoDTO;
 import com.salvo.salvo_api.entities.OrdemServico;
 import com.salvo.salvo_api.entities.OsVistoria;
 import com.salvo.salvo_api.entities.OsVistoriaDano;
-import com.salvo.salvo_api.entities.OsVistoriaFoto;
 import com.salvo.salvo_api.exceptions.RecursoNaoEncontradoException;
 import com.salvo.salvo_api.exceptions.RegraDeNegocioException;
 import com.salvo.salvo_api.repositories.OrdemServicoRepository;
@@ -70,18 +68,6 @@ public class OsVistoriaService {
                 dano.setTipo(danoDto.tipo().trim());
                 dano.setObservacao(limpar(danoDto.observacao()));
                 vistoria.getDanos().add(dano);
-            }
-        }
-
-        vistoria.getFotos().clear();
-        if (dto.fotos() != null) {
-            for (VistoriaFotoDTO fotoDto : dto.fotos()) {
-                OsVistoriaFoto foto = new OsVistoriaFoto();
-                foto.setVistoria(vistoria);
-                foto.setUrl(fotoDto.url().trim());
-                foto.setStoragePath(limpar(fotoDto.storagePath()));
-                foto.setLegenda(limpar(fotoDto.legenda()));
-                vistoria.getFotos().add(foto);
             }
         }
 

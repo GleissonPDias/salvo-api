@@ -10,6 +10,5 @@ public record RegistrarVistoriaDTO(
     String pertences,
     String observacoes,
     OffsetDateTime realizadaEm,
-    List<@Valid VistoriaDanoDTO> danos,
-    List<@Valid VistoriaFotoDTO> fotos
+    List<@Valid VistoriaDanoDTO> danos
 ) {}
