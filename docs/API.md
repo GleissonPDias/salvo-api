@@ -1061,6 +1061,47 @@ Ao entrar em `RECEBIDO`:
 
 ---
 
+## Orçamentos
+
+| Método | Caminho | Autorização | Descrição |
+| --- | --- | --- | --- |
+| `GET` | `/orcamentos` | `ORCAMENTOS` | Lista os orçamentos da oficina |
+| `GET` | `/orcamentos/{id}` | `ORCAMENTOS` | Detalhe (com itens) |
+| `POST` | `/orcamentos` | `ORCAMENTOS` | Cria um orçamento (rascunho) |
+| `PUT` | `/orcamentos/{id}` | `ORCAMENTOS` | Atualiza dados e itens |
+| `DELETE` | `/orcamentos/{id}` | `ORCAMENTOS` | Exclui |
+| `PATCH` | `/orcamentos/{id}/status?status=` | `ORCAMENTOS` | Altera status (`ENVIADO`, `APROVADO`, `REJEITADO`, `CONVERTIDO`, `CANCELADO`) |
+| `POST` | `/orcamentos/{id}/converter?ordemServicoId=` | `ORCAMENTOS` | Marca como convertido em OS (aceita id ou número da OS) |
+
+### Corpo de criação
+
+```json
+{
+  "clienteId": 12,
+  "veiculoId": 7,
+  "titulo": "Revisão 30k",
+  "tipo": "revisao",
+  "observacoes": "Obs",
+  "validade": "2026-11-20",
+  "validadeDias": 7,
+  "desconto": 0,
+  "descontoTipo": "VALOR",
+  "canalEnvio": "whatsapp",
+  "itens": [
+    { "tipo": "SERVICO", "servicoId": 1, "codigo": "SRV001", "descricao": "Troca de óleo", "quantidade": 1, "valorUnitario": 100, "tempoEstimadoHoras": 1 },
+    { "tipo": "PECA", "pecaId": 4, "codigo": "PC001", "descricao": "Filtro", "quantidade": 1, "valorUnitario": 20 }
+  ]
+}
+```
+
+`tipo` do item aceita `PECA` ou `SERVICO`. Itens avulsos (sem `pecaId`/`servicoId`) são permitidos. `status` inicial é sempre `RASCUNHO`.
+
+### Resposta (resumo)
+
+Inclui `criadoPor`, `criadoPorNome`, `ordemServicoId`, `status`, `validade`, `emitidoEm`, `aprovadoEm`, `rejeitadoEm`, `motivoRejeicao` e `itens`.
+
+---
+
 ## Financeiro
 
 ### Pagamentos (contas a receber)
