@@ -8,10 +8,12 @@ import com.salvo.salvo_api.dtos.OrcamentoDTO;
 import com.salvo.salvo_api.dtos.OrcamentoItemDTO;
 import com.salvo.salvo_api.entities.Orcamento;
 import com.salvo.salvo_api.entities.OrcamentoItem;
+import com.salvo.salvo_api.entities.OrdemServico;
 import com.salvo.salvo_api.entities.Oficina;
 import com.salvo.salvo_api.exceptions.RecursoNaoEncontradoException;
 import com.salvo.salvo_api.entities.Usuario;
 import com.salvo.salvo_api.repositories.OrcamentoRepository;
+import com.salvo.salvo_api.repositories.OrdemServicoRepository;
 import com.salvo.salvo_api.repositories.UsuarioRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -29,6 +31,7 @@ import java.util.List;
 public class OrcamentoService {
 
     private final OrcamentoRepository orcamentoRepository;
+    private final OrdemServicoRepository ordemServicoRepository;
     private final UsuarioRepository usuarioRepository;
     private final OficinaContexto oficinaContexto;
 
@@ -126,9 +129,19 @@ public class OrcamentoService {
     }
 
     @Transactional
-    public OrcamentoDTO converter(Long id, Long ordemServicoId) {
+    public OrcamentoDTO converter(Long id, Long ordemServicoIdOuNumero) {
         Orcamento orcamento = exigir(id);
-        orcamento.setOrdemServicoId(ordemServicoId);
+        Long oficinaId = oficinaContexto.getOficinaId();
+
+        OrdemServico ordem = ordemServicoRepository.findById(ordemServicoIdOuNumero).orElse(null);
+        if (ordem == null || !ordem.getOficina().getId().equals(oficinaId)) {
+            ordem = ordemServicoRepository.findByOficinaIdAndNumero(oficinaId, ordemServicoIdOuNumero.intValue()).orElse(null);
+        }
+        if (ordem == null) {
+            throw new RecursoNaoEncontradoException("OS não encontrada: " + ordemServicoIdOuNumero);
+        }
+
+        orcamento.setOrdemServicoId(ordem.getId());
         orcamento.setStatus("CONVERTIDO");
         Orcamento salvo = orcamentoRepository.save(orcamento);
         return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()));
