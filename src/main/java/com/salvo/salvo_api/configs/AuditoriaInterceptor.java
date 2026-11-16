@@ -124,6 +124,7 @@ public class AuditoriaInterceptor implements HandlerInterceptor {
             case "fornecedores" -> new Contexto("ESTOQUE", "Fornecedor");
             case "pedidos-compra" -> new Contexto("ESTOQUE", "PedidoCompra");
             case "ordens-servico" -> new Contexto("OS", "OrdemServico");
+            case "orcamentos" -> new Contexto("ORCAMENTOS", "Orcamento");
             case "agendamentos" -> new Contexto("AGENDA", "Agendamento");
             case "pagamentos" -> new Contexto("FINANCEIRO", "Pagamento");
             case "despesas" -> new Contexto("FINANCEIRO", "Despesa");
