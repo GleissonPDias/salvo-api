@@ -1,6 +1,5 @@
 package com.salvo.salvo_api.entities;
 
-import com.salvo.salvo_api.domain.orcamento.TipoOrcamentoItem;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,10 +23,8 @@ public class OrcamentoItem {
     @JoinColumn(name = "orcamento_id", nullable = false)
     private Orcamento orcamento;
 
-    @Column(nullable = false, columnDefinition = "tipo_orcamento_item")
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    private TipoOrcamentoItem tipo;
+    @Column(nullable = false, length = 10)
+    private String tipo;
 
     @Column(name = "peca_id")
     private Long pecaId;

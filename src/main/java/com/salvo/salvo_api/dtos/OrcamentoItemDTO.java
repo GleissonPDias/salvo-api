@@ -18,7 +18,7 @@ public record OrcamentoItemDTO(
     public static OrcamentoItemDTO from(OrcamentoItem item) {
         return new OrcamentoItemDTO(
             item.getId(),
-            item.getTipo().name(),
+            item.getTipo(),
             item.getPecaId(),
             item.getServicoId(),
             item.getCodigo(),

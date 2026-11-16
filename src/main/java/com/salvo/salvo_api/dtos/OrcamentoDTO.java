@@ -46,7 +46,7 @@ public record OrcamentoDTO(
             o.getCriadoPor(),
             criadoPorNome,
             o.getOrdemServicoId(),
-            o.getStatus().name(),
+            o.getStatus(),
             o.getValidade(),
             o.getObservacoes(),
             o.getDesconto(),

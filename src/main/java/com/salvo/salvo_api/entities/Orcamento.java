@@ -1,6 +1,5 @@
 package com.salvo.salvo_api.entities;
 
-import com.salvo.salvo_api.domain.orcamento.StatusOrcamento;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -42,10 +41,8 @@ public class Orcamento {
     @Column(name = "ordem_servico_id")
     private Long ordemServicoId;
 
-    @Column(nullable = false, columnDefinition = "status_orcamento")
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    private StatusOrcamento status = StatusOrcamento.RASCUNHO;
+    @Column(nullable = false, length = 20)
+    private String status = "RASCUNHO";
 
     @Column
     private LocalDate validade;

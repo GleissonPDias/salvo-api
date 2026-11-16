@@ -7,8 +7,6 @@ import com.salvo.salvo_api.dtos.CriarOrcamentoItemDTO;
 import com.salvo.salvo_api.dtos.OrcamentoDTO;
 import com.salvo.salvo_api.dtos.OrcamentoItemDTO;
 import com.salvo.salvo_api.entities.Orcamento;
-import com.salvo.salvo_api.domain.orcamento.StatusOrcamento;
-import com.salvo.salvo_api.domain.orcamento.TipoOrcamentoItem;
 import com.salvo.salvo_api.entities.OrcamentoItem;
 import com.salvo.salvo_api.entities.Oficina;
 import com.salvo.salvo_api.exceptions.RecursoNaoEncontradoException;
@@ -70,7 +68,7 @@ public class OrcamentoService {
         orcamento.setDesconto(dto.desconto() != null ? dto.desconto() : BigDecimal.ZERO);
         orcamento.setDescontoTipo(dto.descontoTipo() != null ? dto.descontoTipo().trim().toUpperCase() : "VALOR");
         orcamento.setCanalEnvio(dto.canalEnvio());
-        orcamento.setStatus(StatusOrcamento.RASCUNHO);
+        orcamento.setStatus("RASCUNHO");
 
         if (dto.itens() != null) {
             for (CriarOrcamentoItemDTO item : dto.itens()) {
@@ -96,7 +94,7 @@ public class OrcamentoService {
         if (dto.desconto() != null) orcamento.setDesconto(dto.desconto());
         if (dto.descontoTipo() != null) orcamento.setDescontoTipo(dto.descontoTipo().trim().toUpperCase());
         if (dto.canalEnvio() != null) orcamento.setCanalEnvio(dto.canalEnvio());
-        if (dto.status() != null) orcamento.setStatus(StatusOrcamento.valueOf(dto.status().trim().toUpperCase()));
+        if (dto.status() != null) orcamento.setStatus(dto.status().trim().toUpperCase());
 
         if (dto.itens() != null) {
             orcamento.getItens().clear();
@@ -117,12 +115,12 @@ public class OrcamentoService {
     @Transactional
     public OrcamentoDTO alterarStatus(Long id, String status) {
         Orcamento orcamento = exigir(id);
-        StatusOrcamento novo = StatusOrcamento.valueOf(status.trim().toUpperCase());
+        String novo = status.trim().toUpperCase();
         orcamento.setStatus(novo);
         OffsetDateTime now = OffsetDateTime.now();
-        if (novo == StatusOrcamento.ENVIADO && orcamento.getEmitidoEm() == null) orcamento.setEmitidoEm(now);
-        if (novo == StatusOrcamento.APROVADO) orcamento.setAprovadoEm(now);
-        if (novo == StatusOrcamento.REJEITADO) orcamento.setRejeitadoEm(now);
+        if ("ENVIADO".equals(novo) && orcamento.getEmitidoEm() == null) orcamento.setEmitidoEm(now);
+        if ("APROVADO".equals(novo)) orcamento.setAprovadoEm(now);
+        if ("REJEITADO".equals(novo)) orcamento.setRejeitadoEm(now);
         Orcamento salvo = orcamentoRepository.save(orcamento);
         return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()));
     }
@@ -131,7 +129,7 @@ public class OrcamentoService {
     public OrcamentoDTO converter(Long id, Long ordemServicoId) {
         Orcamento orcamento = exigir(id);
         orcamento.setOrdemServicoId(ordemServicoId);
-        orcamento.setStatus(StatusOrcamento.CONVERTIDO);
+        orcamento.setStatus("CONVERTIDO");
         Orcamento salvo = orcamentoRepository.save(orcamento);
         return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()));
     }
@@ -145,7 +143,7 @@ public class OrcamentoService {
     private OrcamentoItem toItem(Orcamento orcamento, CriarOrcamentoItemDTO dto) {
         OrcamentoItem item = new OrcamentoItem();
         item.setOrcamento(orcamento);
-        item.setTipo(TipoOrcamentoItem.valueOf(dto.tipo().trim().toUpperCase()));
+        item.setTipo(dto.tipo().trim().toUpperCase());
         item.setPecaId(dto.pecaId());
         item.setServicoId(dto.servicoId());
         item.setCodigo(dto.codigo());
