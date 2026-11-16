@@ -1,5 +1,13 @@
 # Changelog — Salvô API
 
+## Correções recentes
+
+- `OrcamentoItem` passou a persistir `tempo_estimado_horas`; `OrcamentoItemDTO` e `CriarOrcamentoItemDTO` expõem o campo.
+- `GlobalExceptionHandler` passa a incluir a causa do banco nos detalhes do `CONFLITO` para facilitar diagnóstico.
+- `V8__orcamento_itens_permite_itens_avulsos.sql` remove a restrição que bloqueava itens avulsos no orçamento.
+- Nenhuma migração anterior foi alterada.
+
+
 ## Entrega em andamento — V8: libera itens avulsos no orçamento
 
 Remove a restrição `orcamento_itens_check` que exigia `peca_id` ou `servico_id` preenchido, permitindo itens com descrição livre (serviço/peça avulsa) no orçamento.
