@@ -1,5 +1,13 @@
 # Changelog — Salvô API
 
+## Correção — status e tipo de orçamento como varchar (V9)
+
+Converte `orcamentos.status` e `orcamento_itens.tipo` de enum nativo para `varchar`, evitando `invalid input value for enum` entre ambientes. A view `vw_orcamento_resumo` é recriada/descartada conforme necessário.
+
+**Migração:** `V9__orcamentos_status_e_tipo_como_varchar.sql` (V1–V8 não foram editadas).
+
+---
+
 ## Correções recentes
 
 - `OrcamentoItem` passou a persistir `tempo_estimado_horas`; `OrcamentoItemDTO` e `CriarOrcamentoItemDTO` expõem o campo.
