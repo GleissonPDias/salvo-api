@@ -353,20 +353,15 @@ As migrações ficam em `src/main/resources/db/migration`:
 
 | Versão | Arquivo | Conteúdo |
 | --- | --- | --- |
-| V1 | `V1__baseline.sql` | Schema base (oficinas, clientes, veículos, OS, catálogo, orçamentos) |
-| V2 | `V2__corrigir_baseline.sql` | Correções de nomes, triggers e tipos |
-| V3 | `V3__numeracao_sequencial_os.sql` | Numeração sequencial e imutável de OS por oficina |
-| V4 | `V4__saas_multi_oficina_features.sql` | Multi-oficina, status, OS, estoque, financeiro, agenda, notificações e RLS |
-| V5 | `V5__cadastro_equipe_e_permissoes.sql` | Perfil de acesso, flag de mecânico e senha temporária |
-| V6 | `V6__permissoes_por_modulo_e_auditoria.sql` | Permissões por módulo, dono da oficina e auditoria |
-| V7 | `V7__orcamentos_campos_comerciais.sql` | Campos comerciais do orçamento |
-| V8 | `V8__orcamento_itens_permite_itens_avulsos.sql` | Permite itens avulsos no orçamento |
+| V1 | `V1__baseline.sql` | Schema consolidado (estado atual de produção): tabelas, enums, funções, triggers, views, RLS e políticas. Substitui as antigas V1 a V9 |
+| V2 em diante | — | Próximas mudanças de schema entram como novas versões a partir de V2 |
 
 Regras importantes:
 
-- **Nunca edite V1 a V5.** Toda mudança nova entra em uma nova versão.
+- **Nunca edite a V1 depois de aplicada em produção.** Toda mudança nova entra em uma nova versão (V2, V3...).
 - A V4, a V5 e a V6 são **idempotentes** e **aditivas**.
 - Detalhes de triggers, RLS e validação local estão em [docs/BANCO-E-MIGRACOES.md](docs/BANCO-E-MIGRACOES.md).
+- As migrações anteriores à consolidação estão no histórico do git (commit `1ab2bdf` e anteriores).
 
 ---
 
@@ -411,7 +406,7 @@ salvo-api/
     │   │   └── SalvoApiApplication.java
     │   └── resources/
     │       ├── application.properties
-    │       └── db/migration/   # V1..V4
+    │       └── db/migration/   # V1 (baseline consolidada)
     └── test/
 ```
 

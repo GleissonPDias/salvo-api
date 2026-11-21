@@ -2,14 +2,16 @@
 
 O schema é versionado com **Flyway** e validado pelo Hibernate no start (`ddl-auto=validate`). Este documento descreve as migrações, as regras que vivem no PostgreSQL e como validar tudo localmente.
 
-> **Regra de ouro:** migrações já aplicadas (`V1` a `V5`) **não são editadas**. Toda mudança nova entra em uma nova versão (`V6`, `V7`...). A entrega atual adicionou a `V6`.
+> **Regra de ouro:** a `V1` é a baseline consolidada e, depois de aplicada em produção, **não é editada**. Toda mudança nova entra em uma nova versão (`V2`, `V3`...).
+>
+> **Consolidação:** as migrações `V1` a `V9` anteriores foram unificadas em uma única baseline gerada a partir do `pg_dump --schema-only` do Supabase de produção. O histórico antigo continua no git. A produção será recriada a partir dessa baseline (ação pendente, com o histórico Flyway anterior removido).
 
 ---
 
 ## Sumário
 
 - [Visão das migrações](#visão-das-migrações)
-- [V1 — baseline](#v1--baseline)
+- [Histórico anterior à consolidação](#histórico-anterior-à-consolidação-referência)
 - [V2 — correções](#v2--correções)
 - [V3 — numeração de OS](#v3--numeração-de-os)
 - [V4 — SaaS multi-oficina](#v4--saas-multi-oficina)
@@ -27,16 +29,15 @@ O schema é versionado com **Flyway** e validado pelo Hibernate no start (`ddl-a
 
 | Versão | Arquivo | Papel |
 | --- | --- | --- |
-| V1 | `V1__baseline.sql` | Schema base do sistema |
-| V2 | `V2__corrigir_baseline.sql` | Corrige nomes de colunas/triggers do schema legado |
-| V3 | `V3__numeracao_sequencial_os.sql` | Numeração sequencial e imutável de OS por oficina |
-| V4 | `V4__saas_multi_oficina_features.sql` | Multi-oficina + funcionalidades usadas pelo front |
-| V5 | `V5__cadastro_equipe_e_permissoes.sql` | Perfil de acesso, flag de mecânico e senha temporária |
-| V6 | `V6__permissoes_por_modulo_e_auditoria.sql` | Permissões por módulo, dono da oficina e auditoria |
+| V1 | `V1__baseline.sql` | Schema completo consolidado (estado atual de produção) |
 
-As migrações são **idempotentes** e usam `if not exists`, `do $$ ... $$` e `on conflict` para poderem rodar em bancos que já têm parte do schema.
+As próximas versões (V2, V3...) devem ser **idempotentes** e **aditivas**, usando `if not exists`, `do $$ ... $$` e `on conflict` quando aplicável.
 
 ---
+
+## Histórico anterior à consolidação (referência)
+
+As seções abaixo descrevem as migrações que foram unificadas na V1. Permanecem como referência do que cada etapa fez; os arquivos originais estão no histórico do git.
 
 ## V1 — baseline
 

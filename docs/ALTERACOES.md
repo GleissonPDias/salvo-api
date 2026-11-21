@@ -1,5 +1,15 @@
 # Changelog — Salvô API
 
+## Consolidação das migrações (V1 única)
+
+- As migrações `V1` a `V9` foram unificadas em uma única `V1__baseline.sql`, gerada a partir do `pg_dump --schema-only` do banco de produção (Supabase).
+- A baseline inclui os enums, funções, triggers, views, RLS e políticas que existiam no banco, inclusive `tipo_item_orcamento` e `tipo_movimentacao_estoque`, que não estavam em nenhuma migração.
+- Validação: API sobe com `ddl-auto=validate` e a suíte de testes passa (24 testes) em banco limpo com a baseline.
+- Pendente: recriar o banco de produção (Supabase) a partir da baseline, removendo o histórico Flyway anterior. Enquanto isso não for feito, o deploy do back não deve ser publicado.
+- Próximas mudanças de schema entram como `V2`, `V3`... sem editar a `V1`.
+
+---
+
 ## Correção — status e tipo de orçamento como varchar (V9)
 
 Converte `orcamentos.status` e `orcamento_itens.tipo` de enum nativo para `varchar`, evitando `invalid input value for enum` entre ambientes. A view `vw_orcamento_resumo` é recriada/descartada conforme necessário.
