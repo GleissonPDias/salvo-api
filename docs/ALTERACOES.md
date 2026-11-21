@@ -1,5 +1,12 @@
 # Changelog — Salvô API
 
+## Correção — auditoria com detalhe do registro
+
+- `AuditoriaInterceptor` agora lê o corpo da resposta (via `AuditoriaResponseCacheFilter`) e extrai o nome/descrição/código do registro criado ou editado, incluindo no `resumo` (ex.: "Criou Cliente: João").
+- Sem mudança de schema.
+
+---
+
 ## Consolidação das migrações (V1 única)
 
 - As migrações `V1` a `V9` foram unificadas em uma única `V1__baseline.sql`, gerada a partir do `pg_dump --schema-only` do banco de produção (Supabase).
