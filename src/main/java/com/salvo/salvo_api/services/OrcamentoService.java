@@ -11,6 +11,7 @@ import com.salvo.salvo_api.entities.OrcamentoItem;
 import com.salvo.salvo_api.entities.OrdemServico;
 import com.salvo.salvo_api.entities.Oficina;
 import com.salvo.salvo_api.exceptions.RecursoNaoEncontradoException;
+import com.salvo.salvo_api.exceptions.RegraDeNegocioException;
 import com.salvo.salvo_api.entities.Usuario;
 import com.salvo.salvo_api.repositories.OrcamentoRepository;
 import com.salvo.salvo_api.repositories.OrdemServicoRepository;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Set;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -29,6 +31,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class OrcamentoService {
+
+    private static final Set<String> STATUS_VALIDOS =
+        Set.of("RASCUNHO", "ENVIADO", "APROVADO", "REJEITADO", "CONVERTIDO", "CANCELADO");
 
     private final OrcamentoRepository orcamentoRepository;
     private final OrdemServicoRepository ordemServicoRepository;
@@ -97,7 +102,7 @@ public class OrcamentoService {
         if (dto.desconto() != null) orcamento.setDesconto(dto.desconto());
         if (dto.descontoTipo() != null) orcamento.setDescontoTipo(dto.descontoTipo().trim().toUpperCase());
         if (dto.canalEnvio() != null) orcamento.setCanalEnvio(dto.canalEnvio());
-        if (dto.status() != null) orcamento.setStatus(dto.status().trim().toUpperCase());
+        if (dto.status() != null) orcamento.setStatus(normalizarStatus(dto.status()));
 
         if (dto.itens() != null) {
             orcamento.getItens().clear();
@@ -118,7 +123,7 @@ public class OrcamentoService {
     @Transactional
     public OrcamentoDTO alterarStatus(Long id, String status) {
         Orcamento orcamento = exigir(id);
-        String novo = status.trim().toUpperCase();
+        String novo = normalizarStatus(status);
         orcamento.setStatus(novo);
         OffsetDateTime now = OffsetDateTime.now();
         if ("ENVIADO".equals(novo) && orcamento.getEmitidoEm() == null) orcamento.setEmitidoEm(now);
@@ -145,6 +150,14 @@ public class OrcamentoService {
         orcamento.setStatus("CONVERTIDO");
         Orcamento salvo = orcamentoRepository.save(orcamento);
         return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()));
+    }
+
+    private String normalizarStatus(String status) {
+        String valor = status == null ? "" : status.trim().toUpperCase();
+        if (!STATUS_VALIDOS.contains(valor)) {
+            throw new RegraDeNegocioException("Status de orçamento inválido: " + status);
+        }
+        return valor;
     }
 
     private Orcamento exigir(Long id) {

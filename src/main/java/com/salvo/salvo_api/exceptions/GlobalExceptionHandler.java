@@ -3,6 +3,7 @@ package com.salvo.salvo_api.exceptions;
 import com.salvo.salvo_api.dtos.ErroDTO;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -57,8 +58,18 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErroDTO handleConflito(DataIntegrityViolationException ex) {
+    public ResponseEntity<ErroDTO> handleConflito(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(classificarIntegridade(ex)).body(montarErroIntegridade(ex));
+    }
+
+    private HttpStatus classificarIntegridade(DataIntegrityViolationException ex) {
+        String causa = ex.getMostSpecificCause().getMessage();
+        if (causa != null && causa.contains("violates foreign key constraint")) return HttpStatus.UNPROCESSABLE_ENTITY;
+        if (causa != null && causa.contains("violates check constraint")) return HttpStatus.UNPROCESSABLE_ENTITY;
+        return HttpStatus.CONFLICT;
+    }
+
+    private ErroDTO montarErroIntegridade(DataIntegrityViolationException ex) {
         String causa = ex.getMostSpecificCause().getMessage();
         if (causa != null && causa.contains("ux_clientes_oficina_cpf_cnpj")) {
             return new ErroDTO("CONFLITO", "CPF/CNPJ já cadastrado nesta oficina");
@@ -97,6 +108,12 @@ public class GlobalExceptionHandler {
         }
         if (causa != null && causa.contains("ux_os_vistoria_danos_area_tipo")) {
             return new ErroDTO("CONFLITO", "Dano já registrado para esta área e tipo de avaria");
+        }
+        if (causa != null && causa.contains("violates foreign key constraint")) {
+            return new ErroDTO("REGRA_DE_NEGOCIO", "Registro relacionado não encontrado (cliente, veículo, peça ou serviço).");
+        }
+        if (causa != null && causa.contains("violates check constraint")) {
+            return new ErroDTO("VALIDACAO", "Valor inválido para um dos campos informados.");
         }
         return new ErroDTO("CONFLITO", "Dado duplicado", causa == null ? List.of() : List.of(causa));
     }

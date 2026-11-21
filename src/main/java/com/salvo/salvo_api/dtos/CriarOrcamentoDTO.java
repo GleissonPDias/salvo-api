@@ -4,6 +4,8 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import jakarta.validation.Valid;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,5 +23,5 @@ public record CriarOrcamentoDTO(
     BigDecimal desconto,
     String descontoTipo,
     String canalEnvio,
-    List<CriarOrcamentoItemDTO> itens
+    List<@Valid CriarOrcamentoItemDTO> itens
 ) {}

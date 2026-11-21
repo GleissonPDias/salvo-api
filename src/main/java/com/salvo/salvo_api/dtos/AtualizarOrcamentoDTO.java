@@ -2,6 +2,8 @@ package com.salvo.salvo_api.dtos;
 
 import jakarta.validation.constraints.DecimalMin;
 
+import jakarta.validation.Valid;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -18,5 +20,5 @@ public record AtualizarOrcamentoDTO(
     String descontoTipo,
     String canalEnvio,
     String status,
-    List<CriarOrcamentoItemDTO> itens
+    List<@Valid CriarOrcamentoItemDTO> itens
 ) {}
