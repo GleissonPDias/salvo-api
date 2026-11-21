@@ -33,7 +33,7 @@ class AuditoriaInterceptorTest {
 
     @BeforeEach
     void setUp() {
-        interceptor = new AuditoriaInterceptor(auditoriaService, oficinaContexto);
+        interceptor = new AuditoriaInterceptor(oficinaContexto, auditoriaService);
 
         Oficina oficina = new Oficina();
         oficina.setId(16L);
