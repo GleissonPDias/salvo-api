@@ -122,14 +122,21 @@ public class OrcamentoService {
     }
 
     @Transactional
-    public OrcamentoDTO alterarStatus(Long id, String status) {
+    public OrcamentoDTO alterarStatus(Long id, String status, String motivo, String canal) {
         Orcamento orcamento = exigir(id);
         String novo = normalizarStatus(status);
         orcamento.setStatus(novo);
         OffsetDateTime now = OffsetDateTime.now();
-        if ("ENVIADO".equals(novo) && orcamento.getEmitidoEm() == null) orcamento.setEmitidoEm(now);
+        if ("ENVIADO".equals(novo)) {
+            if (orcamento.getEmitidoEm() == null) orcamento.setEmitidoEm(now);
+            if (canal != null && !canal.isBlank()) orcamento.setCanalEnvio(canal.trim());
+        }
         if ("APROVADO".equals(novo)) orcamento.setAprovadoEm(now);
-        if ("REJEITADO".equals(novo)) orcamento.setRejeitadoEm(now);
+        if ("REJEITADO".equals(novo)) {
+            orcamento.setRejeitadoEm(now);
+            if (motivo != null && !motivo.isBlank()) orcamento.setMotivoRejeicao(motivo.trim());
+            if (canal != null && !canal.isBlank()) orcamento.setCanalEnvio(canal.trim());
+        }
         Orcamento salvo = orcamentoRepository.save(orcamento);
         return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()), nomeCriador(salvo.getVendedorId()));
     }

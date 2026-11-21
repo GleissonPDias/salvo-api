@@ -57,8 +57,13 @@ public class OrcamentoController {
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Altera o status (enviado, aprovado, rejeitado...)")
-    public OrcamentoDTO alterarStatus(@PathVariable Long id, @RequestParam String status) {
-        return orcamentoService.alterarStatus(id, status);
+    public OrcamentoDTO alterarStatus(
+        @PathVariable Long id,
+        @RequestParam String status,
+        @RequestParam(required = false) String motivo,
+        @RequestParam(required = false) String canal
+    ) {
+        return orcamentoService.alterarStatus(id, status, motivo, canal);
     }
 
     @PostMapping("/{id}/converter")
