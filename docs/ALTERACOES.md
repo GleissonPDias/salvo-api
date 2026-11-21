@@ -1,5 +1,23 @@
 # Changelog — Salvô API
 
+## Estado atual do projeto (resumo)
+
+Entregas implementadas e publicadas:
+
+- Permissões por módulo, dono da oficina e auditoria (V6).
+- Troca de usuário, senha temporária e perfil VENDEDOR (V3).
+- API de orçamentos persistidos (V7, V8, V9 consolidados na V1) e conversão em OS.
+- Auditoria enriquecida com id e nome do registro afetado.
+- Fornecedores com exclusão lógica e listagem de ativos por padrão.
+- Consolidação das migrações em V1 baseline + V2 (seed de status de OS) + V3 (perfil VENDEDOR).
+- Busca de clientes por telefone/secundário.
+- Paginação em agenda e financeiro.
+- Causa do conflito exposta nos erros de integridade.
+
+O módulo de notificações permanece disponível no back-end, mas o sino está oculto no front por enquanto.
+
+---
+
 ## Correção — auditoria com detalhe do registro
 
 - `AuditoriaInterceptor` agora lê o corpo da resposta (via `AuditoriaResponseCacheFilter`) e extrai o nome/descrição/código do registro criado ou editado, incluindo no `resumo` (ex.: "Criou Cliente: João").
