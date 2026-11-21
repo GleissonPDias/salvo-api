@@ -26,7 +26,7 @@ public class FornecedorController {
     @GetMapping
     @Operation(summary = "Lista fornecedores da oficina")
     public List<FornecedorDTO> listar(
-        @RequestParam(defaultValue = "true") boolean incluirInativos
+        @RequestParam(defaultValue = "false") boolean incluirInativos
     ) {
         return fornecedorService.listar(incluirInativos);
     }
