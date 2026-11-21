@@ -14,6 +14,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,8 +35,11 @@ public class FinanceiroController {
 
     @GetMapping("/pagamentos")
     @Operation(summary = "Lista os pagamentos da oficina")
-    public List<PagamentoDTO> listarPagamentos(@RequestParam(required = false) String status) {
-        return financeiroService.listarPagamentos(status);
+    public Page<PagamentoDTO> listarPagamentos(
+        @RequestParam(required = false) String status,
+        @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return financeiroService.listarPagamentos(status, pageable);
     }
 
     @GetMapping("/pagamentos/{id}")
@@ -77,8 +83,11 @@ public class FinanceiroController {
 
     @GetMapping("/despesas")
     @Operation(summary = "Lista as despesas da oficina")
-    public List<DespesaDTO> listarDespesas(@RequestParam(required = false) String status) {
-        return financeiroService.listarDespesas(status);
+    public Page<DespesaDTO> listarDespesas(
+        @RequestParam(required = false) String status,
+        @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return financeiroService.listarDespesas(status, pageable);
     }
 
     @GetMapping("/despesas/{id}")

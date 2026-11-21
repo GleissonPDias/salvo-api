@@ -13,6 +13,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
@@ -34,18 +37,26 @@ public class AgendaService {
     private EntityManager em;
 
     @Transactional(readOnly = true)
-    public List<AgendamentoDTO> listar(String status, OffsetDateTime inicio, OffsetDateTime fim) {
+    public Page<AgendamentoDTO> listar(String status, OffsetDateTime inicio, OffsetDateTime fim, Pageable pageable) {
         Long oficina = oficinaContexto.getOficinaId();
         List<Agendamento> lista = status == null || status.isBlank()
             ? agendamentoRepository.findByOficinaIdOrderByInicioAsc(oficina)
             : agendamentoRepository.findByOficinaIdAndStatusOrderByInicioAsc(
                 oficina, normalizar(status));
 
-        return lista.stream()
+        List<AgendamentoDTO> filtrado = lista.stream()
             .filter(item -> inicio == null || !item.getInicio().isBefore(inicio))
             .filter(item -> fim == null || item.getInicio().isBefore(fim))
             .map(AgendamentoDTO::from)
             .toList();
+
+        if (pageable == null || pageable.isUnpaged()) {
+            return new PageImpl<>(filtrado);
+        }
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filtrado.size());
+        List<AgendamentoDTO> page = start >= filtrado.size() ? List.of() : filtrado.subList(start, end);
+        return new PageImpl<>(page, pageable, filtrado.size());
     }
 
     @Transactional(readOnly = true)

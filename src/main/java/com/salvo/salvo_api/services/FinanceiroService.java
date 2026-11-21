@@ -19,6 +19,9 @@ import com.salvo.salvo_api.repositories.PagamentoRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,15 +52,20 @@ public class FinanceiroService {
     /* ------------------------------------------------------------------ */
 
     @Transactional(readOnly = true)
-    public List<PagamentoDTO> listarPagamentos(String status) {
+    public Page<PagamentoDTO> listarPagamentos(String status, Pageable pageable) {
         Long oficina = oficinaContexto.getOficinaId();
         List<Pagamento> lista = status == null || status.isBlank()
             ? pagamentoRepository.findByOficinaIdOrderByCriadoEmDesc(oficina)
             : pagamentoRepository.findByOficinaIdAndStatusOrderByCriadoEmDesc(
                 oficina, normalizar(status, STATUS_PAGAMENTO, "pagamento"));
-        return lista.stream()
+        List<PagamentoDTO> mapped = lista.stream()
             .map(pagamento -> PagamentoDTO.from(pagamento, nomeCriador(pagamento.getCriadoPor())))
             .toList();
+        if (pageable == null || pageable.isUnpaged()) return new PageImpl<>(mapped);
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), mapped.size());
+        List<PagamentoDTO> page = start >= mapped.size() ? List.of() : mapped.subList(start, end);
+        return new PageImpl<>(page, pageable, mapped.size());
     }
 
     @Transactional(readOnly = true)
@@ -133,15 +141,20 @@ public class FinanceiroService {
     /* ------------------------------------------------------------------ */
 
     @Transactional(readOnly = true)
-    public List<DespesaDTO> listarDespesas(String status) {
+    public Page<DespesaDTO> listarDespesas(String status, Pageable pageable) {
         Long oficina = oficinaContexto.getOficinaId();
         List<Despesa> lista = status == null || status.isBlank()
             ? despesaRepository.findByOficinaIdOrderByCriadoEmDesc(oficina)
             : despesaRepository.findByOficinaIdAndStatusOrderByCriadoEmDesc(
                 oficina, normalizar(status, STATUS_DESPESA, "despesa"));
-        return lista.stream()
+        List<DespesaDTO> mapped = lista.stream()
             .map(despesa -> DespesaDTO.from(despesa, nomeCriador(despesa.getCriadoPor())))
             .toList();
+        if (pageable == null || pageable.isUnpaged()) return new PageImpl<>(mapped);
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), mapped.size());
+        List<DespesaDTO> page = start >= mapped.size() ? List.of() : mapped.subList(start, end);
+        return new PageImpl<>(page, pageable, mapped.size());
     }
 
     @Transactional(readOnly = true)

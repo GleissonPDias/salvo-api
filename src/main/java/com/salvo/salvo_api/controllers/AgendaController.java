@@ -12,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
@@ -28,14 +31,15 @@ public class AgendaController {
 
     @GetMapping
     @Operation(summary = "Lista agendamentos, opcionalmente por status e período")
-    public List<AgendamentoDTO> listar(
+    public Page<AgendamentoDTO> listar(
         @RequestParam(required = false) String status,
         @RequestParam(required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime inicio,
         @RequestParam(required = false)
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime fim
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime fim,
+        @PageableDefault(size = 20) Pageable pageable
     ) {
-        return agendaService.listar(status, inicio, fim);
+        return agendaService.listar(status, inicio, fim, pageable);
     }
 
     @GetMapping("/{id}")

@@ -15,7 +15,10 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     Optional<Cliente> findByOficinaIdAndId(Long oficinaId, Long id);
 
     @Query("SELECT c FROM Cliente c WHERE c.oficina.id = :oficina AND c.ativo = true AND " +
-            "(LOWER(c.nome) LIKE LOWER(CONCAT('%', :q, '%')) OR c.cpfCnpj LIKE CONCAT('%', :q, '%'))")
+            "(LOWER(c.nome) LIKE LOWER(CONCAT('%', :q, '%')) " +
+            "OR c.cpfCnpj LIKE CONCAT('%', :q, '%') " +
+            "OR c.telefone LIKE CONCAT('%', :q, '%') " +
+            "OR c.telefoneSecundario LIKE CONCAT('%', :q, '%'))")
     Page<Cliente> buscar(Long oficina, String q, Pageable pageable);
 
 }
