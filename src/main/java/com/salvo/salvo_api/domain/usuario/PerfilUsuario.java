@@ -13,5 +13,6 @@ package com.salvo.salvo_api.domain.usuario;
  */
 public enum PerfilUsuario {
     ADMIN,
-    FUNCIONARIO
+    FUNCIONARIO,
+    VENDEDOR
 }

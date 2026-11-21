@@ -19,6 +19,7 @@ public record AtualizarOrcamentoDTO(
     BigDecimal desconto,
     String descontoTipo,
     String canalEnvio,
+    Long vendedorId,
     String status,
     List<@Valid CriarOrcamentoItemDTO> itens
 ) {}

@@ -38,6 +38,9 @@ public class Orcamento {
     @Column(name = "criado_por")
     private Long criadoPor;
 
+    @Column(name = "vendedor_id")
+    private Long vendedorId;
+
     @Column(name = "ordem_servico_id")
     private Long ordemServicoId;
 

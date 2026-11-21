@@ -47,14 +47,14 @@ public class OrcamentoService {
     public List<OrcamentoDTO> listar() {
         Long oficinaId = oficinaContexto.getOficinaId();
         return orcamentoRepository.findByOficinaIdOrderByNumeroDesc(oficinaId).stream()
-            .map(o -> OrcamentoDTO.from(o, nomeCriador(o.getCriadoPor())))
+            .map(o -> OrcamentoDTO.from(o, nomeCriador(o.getCriadoPor()), nomeCriador(o.getVendedorId())))
             .toList();
     }
 
     @Transactional(readOnly = true)
     public OrcamentoDTO buscar(Long id) {
         Orcamento o = exigir(id);
-        return OrcamentoDTO.from(o, nomeCriador(o.getCriadoPor()));
+        return OrcamentoDTO.from(o, nomeCriador(o.getCriadoPor()), nomeCriador(o.getVendedorId()));
     }
 
     @Transactional
@@ -68,6 +68,7 @@ public class OrcamentoService {
         orcamento.setClienteId(dto.clienteId());
         orcamento.setVeiculoId(dto.veiculoId());
         orcamento.setCriadoPor(usuarioId);
+        orcamento.setVendedorId(dto.vendedorId());
         orcamento.setTitulo(dto.titulo());
         orcamento.setTipo(dto.tipo());
         orcamento.setObservacoes(dto.observacoes());
@@ -85,7 +86,7 @@ public class OrcamentoService {
         }
 
         Orcamento salvo = orcamentoRepository.save(orcamento);
-        return OrcamentoDTO.from(salvo, oficinaContexto.getUsuarioLogado().getNome());
+        return OrcamentoDTO.from(salvo, oficinaContexto.getUsuarioLogado().getNome(), nomeCriador(salvo.getVendedorId()));
     }
 
     @Transactional
@@ -112,7 +113,7 @@ public class OrcamentoService {
         }
 
         Orcamento salvo = orcamentoRepository.save(orcamento);
-        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()));
+        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()), nomeCriador(salvo.getVendedorId()));
     }
 
     @Transactional
@@ -130,7 +131,7 @@ public class OrcamentoService {
         if ("APROVADO".equals(novo)) orcamento.setAprovadoEm(now);
         if ("REJEITADO".equals(novo)) orcamento.setRejeitadoEm(now);
         Orcamento salvo = orcamentoRepository.save(orcamento);
-        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()));
+        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()), nomeCriador(salvo.getVendedorId()));
     }
 
     @Transactional
@@ -149,7 +150,7 @@ public class OrcamentoService {
         orcamento.setOrdemServicoId(ordem.getId());
         orcamento.setStatus("CONVERTIDO");
         Orcamento salvo = orcamentoRepository.save(orcamento);
-        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()));
+        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()), nomeCriador(salvo.getVendedorId()));
     }
 
     private String normalizarStatus(String status) {

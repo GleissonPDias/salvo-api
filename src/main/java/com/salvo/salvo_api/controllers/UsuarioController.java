@@ -29,8 +29,8 @@ public class UsuarioController {
     private final PermissaoService permissaoService;
 
     @GetMapping
-    @PreAuthorize("@permissoes.isAdmin()")
-    @Operation(summary = "Lista a equipe da oficina (somente administrador)")
+    @PreAuthorize("@permissoes.pode('ORCAMENTOS')")
+    @Operation(summary = "Lista a equipe da oficina (administrador ou quem tem permissão de orçamentos)")
     public List<UsuarioDTO> listar(
         @RequestParam(required = false) String busca,
         @RequestParam(required = false) Boolean ativo,

@@ -23,5 +23,6 @@ public record CriarOrcamentoDTO(
     BigDecimal desconto,
     String descontoTipo,
     String canalEnvio,
+    Long vendedorId,
     List<@Valid CriarOrcamentoItemDTO> itens
 ) {}
