@@ -354,7 +354,8 @@ As migrações ficam em `src/main/resources/db/migration`:
 | Versão | Arquivo | Conteúdo |
 | --- | --- | --- |
 | V1 | `V1__baseline.sql` | Schema consolidado (estado atual de produção): tabelas, enums, funções, triggers, views, RLS e políticas. Substitui as antigas V1 a V9 |
-| V2 em diante | — | Próximas mudanças de schema entram como novas versões a partir de V2 |
+| V2 | `V2__seed_status_ordens_servico.sql` | Seed dos status de OS |
+| V3 | `V3__perfil_vendedor.sql` | Adiciona o perfil VENDEDOR |
 
 Regras importantes:
 

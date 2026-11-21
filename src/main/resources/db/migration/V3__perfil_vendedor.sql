@@ -1,5 +1,5 @@
 -- ============================================================
--- V10__perfil_vendedor.sql
+-- V3__perfil_vendedor.sql
 --
 -- Adiciona o perfil VENDEDOR ao cadastro de usuários.
 --
