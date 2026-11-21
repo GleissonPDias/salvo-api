@@ -4,12 +4,16 @@ import com.salvo.salvo_api.entities.Usuario;
 import com.salvo.salvo_api.services.AuditoriaService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.util.ContentCachingResponseWrapper;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -28,8 +32,9 @@ public class AuditoriaInterceptor implements HandlerInterceptor {
         "/auth", "/notificacoes", "/actuator", "/v3/api-docs", "/swagger-ui", "/error"
     };
 
-    private final AuditoriaService auditoriaService;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private final OficinaContexto oficinaContexto;
+    private final AuditoriaService auditoriaService;
 
     @Override
     public void afterCompletion(
@@ -48,10 +53,15 @@ public class AuditoriaInterceptor implements HandlerInterceptor {
         String caminho = request.getRequestURI();
         if (ignorado(caminho)) return;
 
+        ContentCachingResponseWrapper wrapper = (ContentCachingResponseWrapper) request.getAttribute("auditoria.responseWrapper");
+
         try {
             Usuario usuario = oficinaContexto.getUsuarioLogado();
             Contexto contexto = classificar(caminho);
             String entidadeId = entidadeId(caminho);
+
+            String rotulo = extrairRotulo(wrapper);
+            String resumo = montarResumo(acao, contexto.entidade(), entidadeId, rotulo, caminho);
 
             auditoriaService.registrar(
                 usuario,
@@ -62,7 +72,7 @@ public class AuditoriaInterceptor implements HandlerInterceptor {
                 metodo,
                 caminho,
                 status,
-                resumo(acao, contexto.entidade(), entidadeId, caminho)
+                resumo
             );
         } catch (RuntimeException e) {
             log.warn("Falha ao registrar auditoria de {} {}: {}", metodo, caminho, e.getMessage());
@@ -96,10 +106,34 @@ public class AuditoriaInterceptor implements HandlerInterceptor {
         };
     }
 
-    private String resumo(String acao, String entidade, String entidadeId, String caminho) {
-        if (entidade == null) return verbo(acao) + " " + caminho;
+    private String extrairRotulo(HttpServletResponse response) {
+        if (!(response instanceof ContentCachingResponseWrapper wrapper)) return null;
+        byte[] body = wrapper.getContentAsByteArray();
+        if (body == null || body.length == 0) return null;
+        try {
+            JsonNode node = MAPPER.readTree(body);
+            if (node == null || !node.isObject()) return null;
+            for (String campo : List.of("nome", "descricao", "titulo", "placa", "codigo", "numero", "email")) {
+                if (node.has(campo) && !node.get(campo).isNull()) {
+                    String valor = node.get(campo).asText();
+                    if (valor != null && !valor.isBlank()) return valor;
+                }
+            }
+        } catch (Exception ignored) {
+            // Resposta não é JSON ou não tem os campos esperados.
+        }
+        return null;
+    }
 
-        return verbo(acao) + " " + entidade + (entidadeId != null ? " #" + entidadeId : "");
+    private String montarResumo(String acao, String entidade, String entidadeId, String rotulo, String caminho) {
+        String verbo = verbo(acao);
+        if (entidade == null) return verbo + " " + caminho;
+        if (rotulo != null) return verbo + " " + entidade + ": " + rotulo;
+        return verbo + " " + entidade + (entidadeId != null ? " #" + entidadeId : "");
+    }
+
+    private String resumo(String acao, String entidade, String entidadeId, String caminho) {
+        return montarResumo(acao, entidade, entidadeId, null, caminho);
     }
 
     private String entidadeId(String caminho) {
