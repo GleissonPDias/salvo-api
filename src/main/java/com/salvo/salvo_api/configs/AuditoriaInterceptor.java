@@ -61,6 +61,9 @@ public class AuditoriaInterceptor implements HandlerInterceptor {
             String entidadeId = entidadeId(caminho);
 
             String rotulo = extrairRotulo(wrapper);
+            String idResposta = extrairId(wrapper);
+            if (entidadeId == null && idResposta != null) entidadeId = idResposta;
+
             String resumo = montarResumo(acao, contexto.entidade(), entidadeId, rotulo, caminho);
 
             auditoriaService.registrar(
@@ -106,8 +109,8 @@ public class AuditoriaInterceptor implements HandlerInterceptor {
         };
     }
 
-    private String extrairRotulo(HttpServletResponse response) {
-        if (!(response instanceof ContentCachingResponseWrapper wrapper)) return null;
+    private String extrairRotulo(ContentCachingResponseWrapper wrapper) {
+        if (wrapper == null) return null;
         byte[] body = wrapper.getContentAsByteArray();
         if (body == null || body.length == 0) return null;
         try {
@@ -120,7 +123,20 @@ public class AuditoriaInterceptor implements HandlerInterceptor {
                 }
             }
         } catch (Exception ignored) {
-            // Resposta não é JSON ou não tem os campos esperados.
+        }
+        return null;
+    }
+
+    private String extrairId(ContentCachingResponseWrapper wrapper) {
+        if (wrapper == null) return null;
+        byte[] body = wrapper.getContentAsByteArray();
+        if (body == null || body.length == 0) return null;
+        try {
+            JsonNode node = MAPPER.readTree(body);
+            if (node != null && node.isObject() && node.has("id") && !node.get("id").isNull()) {
+                return node.get("id").asText();
+            }
+        } catch (Exception ignored) {
         }
         return null;
     }
@@ -128,8 +144,10 @@ public class AuditoriaInterceptor implements HandlerInterceptor {
     private String montarResumo(String acao, String entidade, String entidadeId, String rotulo, String caminho) {
         String verbo = verbo(acao);
         if (entidade == null) return verbo + " " + caminho;
-        if (rotulo != null) return verbo + " " + entidade + ": " + rotulo;
-        return verbo + " " + entidade + (entidadeId != null ? " #" + entidadeId : "");
+        StringBuilder sb = new StringBuilder(verbo).append(" ").append(entidade);
+        if (entidadeId != null) sb.append(" #").append(entidadeId);
+        if (rotulo != null) sb.append(": ").append(rotulo);
+        return sb.toString();
     }
 
     private String resumo(String acao, String entidade, String entidadeId, String caminho) {
