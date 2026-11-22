@@ -28,8 +28,11 @@ public class VeiculoController {
     @GetMapping("/veiculos")
     @PreAuthorize("@permissoes.podeAlgum('VEICULOS','OS','AGENDA','ORCAMENTOS')")
     @Operation(summary = "Lista todos os veículos da oficina com paginação")
-    public Page<VeiculoDTO> listar(@ParameterObject @PageableDefault(size = 20, sort = "modelo") Pageable pageable) {
-        return veiculoService.listar(pageable);
+    public Page<VeiculoDTO> listar(
+        @ParameterObject @PageableDefault(size = 20, sort = "modelo") Pageable pageable,
+        @RequestParam(defaultValue = "false") boolean incluirInativos
+    ) {
+        return veiculoService.listar(pageable, incluirInativos);
     }
 
     @GetMapping("/veiculos/{id}")

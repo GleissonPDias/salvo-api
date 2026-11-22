@@ -9,5 +9,6 @@ public record AtualizarVeiculoDTO(
     String versao,
     String fotoUrl,
     String categoria,
-    Boolean rascunho
+    Boolean rascunho,
+    Boolean ativo
 ) {}

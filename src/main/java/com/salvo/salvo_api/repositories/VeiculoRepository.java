@@ -21,8 +21,19 @@ public interface VeiculoRepository extends JpaRepository<Veiculo, Long> {
     Optional<Veiculo> findByIdAndOficina(Long id, Long oficina);
 
     @EntityGraph(attributePaths = {"cliente"})
+    @Query("SELECT v FROM Veiculo v JOIN v.cliente c WHERE v.id = :id AND c.oficina.id = :oficina")
+    Optional<Veiculo> findByIdAndOficinaIncluindoInativos(Long id, Long oficina);
+
+    @EntityGraph(attributePaths = {"cliente"})
     @Query("SELECT COALESCE(MAX(v.numero), 0) FROM Veiculo v JOIN v.cliente c WHERE c.oficina.id = :oficina")
     Integer maxNumero(@Param("oficina") Long oficina);
+
+    @EntityGraph(attributePaths = {"cliente"})
+    @Query(
+        value = "SELECT v FROM Veiculo v JOIN v.cliente c WHERE c.oficina.id = :oficina",
+        countQuery = "SELECT count(v) FROM Veiculo v JOIN v.cliente c WHERE c.oficina.id = :oficina"
+    )
+    Page<Veiculo> findAllByOficina(Long oficina, Pageable pageable);
 
     @EntityGraph(attributePaths = {"cliente"})
     @Query(

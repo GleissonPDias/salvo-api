@@ -26,8 +26,11 @@ public class VeiculoService {
     private final OficinaContexto oficinaContexto;
 
     @Transactional(readOnly = true)
-    public Page<VeiculoDTO> listar(Pageable pageable) {
+    public Page<VeiculoDTO> listar(Pageable pageable, boolean incluirInativos) {
         Long oficinaId = oficinaContexto.getOficinaId();
+        if (incluirInativos) {
+            return veiculoRepository.findAllByOficina(oficinaId, pageable).map(VeiculoDTO::from);
+        }
         return veiculoRepository.findByOficina(oficinaId, pageable).map(VeiculoDTO::from);
     }
 
@@ -81,7 +84,7 @@ public class VeiculoService {
     @Transactional
     public VeiculoDTO atualizar(Long id, AtualizarVeiculoDTO dto) {
         Long oficinaId = oficinaContexto.getOficinaId();
-        Veiculo veiculo = veiculoRepository.findByIdAndOficina(id, oficinaId)
+        Veiculo veiculo = veiculoRepository.findByIdAndOficinaIncluindoInativos(id, oficinaId)
             .orElseThrow(() -> new RecursoNaoEncontradoException("Veículo não encontrado: " + id));
 
         if (dto.cor() != null) veiculo.setCor(dto.cor());
@@ -93,6 +96,7 @@ public class VeiculoService {
         if (dto.fotoUrl() != null) veiculo.setFotoUrl(dto.fotoUrl());
         if (dto.categoria() != null) veiculo.setCategoria(dto.categoria());
         if (dto.rascunho() != null) veiculo.setRascunho(dto.rascunho());
+        if (dto.ativo() != null) veiculo.setAtivo(dto.ativo());
 
         return VeiculoDTO.from(veiculoRepository.save(veiculo));
     }

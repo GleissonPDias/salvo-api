@@ -18,6 +18,13 @@ O módulo de notificações permanece disponível no back-end, mas o sino está 
 
 ---
 
+## Veículos inativos e reativação
+
+- `DELETE /veiculos/{id}` inativa (exclusão lógica); OS e orçamentos mantêm placa, modelo e cliente.
+- `GET /veiculos?incluirInativos=true` lista também os inativos (padrão continua só ativos).
+- `PUT /veiculos/{id}` aceita `ativo` (true reativa o veículo), mesmo para veículos inativos.
+- Sem mudança de schema.
+
 ## Correção — auditoria com detalhe do registro
 
 - `AuditoriaInterceptor` agora lê o corpo da resposta (via `AuditoriaResponseCacheFilter`) e extrai o nome/descrição/código do registro criado ou editado, incluindo no `resumo` (ex.: "Criou Cliente: João").
