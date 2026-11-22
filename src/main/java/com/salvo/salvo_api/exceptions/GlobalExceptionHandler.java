@@ -6,6 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -117,6 +120,24 @@ public class GlobalExceptionHandler {
             return new ErroDTO("VALIDACAO", "Valor inválido para um dos campos informados.");
         }
         return new ErroDTO("CONFLITO", "Dado duplicado", causa == null ? List.of() : List.of(causa));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErroDTO handleParametroAusente(MissingServletRequestParameterException ex) {
+        return new ErroDTO("VALIDACAO", "Parâmetro obrigatório ausente: " + ex.getParameterName());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErroDTO handleRotaInexistente(NoResourceFoundException ex) {
+        return new ErroDTO("NAO_ENCONTRADO", "Endereço não encontrado.");
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public ErroDTO handleMetodoNaoPermitido(HttpRequestMethodNotSupportedException ex) {
+        return new ErroDTO("METODO_NAO_PERMITIDO", "Método HTTP não permitido para este endereço.");
     }
 
     @ExceptionHandler(Exception.class)

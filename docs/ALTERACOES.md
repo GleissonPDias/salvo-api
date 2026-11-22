@@ -18,6 +18,12 @@ O módulo de notificações permanece disponível no back-end, mas o sino está 
 
 ---
 
+## Correção — códigos de erro HTTP
+
+- Parâmetro obrigatório ausente responde `400` (antes `500`).
+- Endereço inexistente responde `404` (antes `500`).
+- Método HTTP não suportado responde `405`.
+
 ## Correção — CPF/CNPJ duplicado
 
 - Violação da constraint `clientes_oficina_id_cpf_cnpj_key` agora responde `409 CONFLITO` com "CPF/CNPJ já cadastrado nesta oficina".
