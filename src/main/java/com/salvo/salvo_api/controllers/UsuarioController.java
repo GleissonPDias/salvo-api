@@ -36,7 +36,9 @@ public class UsuarioController {
         @RequestParam(required = false) Boolean ativo,
         @RequestParam(required = false) Boolean executaOs
     ) {
-        return usuarioService.listar(busca, ativo, executaOs);
+        List<UsuarioDTO> equipe = usuarioService.listar(busca, ativo, executaOs);
+        if (permissaoService.isAdmin()) return equipe;
+        return equipe.stream().map(UsuarioDTO::semDadosSensiveis).toList();
     }
 
     @GetMapping("/{id}")

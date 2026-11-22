@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,6 +52,8 @@ public class OsVistoriaService {
         vistoria.setObservacoes(limpar(dto.observacoes()));
         vistoria.setRealizadaEm(dto.realizadaEm() != null ? dto.realizadaEm() : OffsetDateTime.now());
         vistoria.setRealizadaPor(usuarioId);
+
+        vistoria.setChecklist(dto.checklist() != null ? new HashMap<>(dto.checklist()) : new HashMap<>());
 
         vistoria.getDanos().clear();
         if (dto.danos() != null) {

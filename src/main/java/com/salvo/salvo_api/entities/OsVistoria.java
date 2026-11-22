@@ -6,7 +6,11 @@ import lombok.Setter;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "os_vistorias")
@@ -45,6 +49,10 @@ public class OsVistoria {
 
     @OneToMany(mappedBy = "vistoria", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OsVistoriaDano> danos = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "checklist", columnDefinition = "jsonb", nullable = false)
+    private Map<String, String> checklist = new HashMap<>();
 
     @PrePersist
     private void prePersist() {

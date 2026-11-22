@@ -18,6 +18,11 @@ O módulo de notificações permanece disponível no back-end, mas o sino está 
 
 ---
 
+## Correções de permissões e vistoria
+
+- `GET /usuarios` para quem não é administrador devolve a equipe sem comissão, permissões, e-mail e telefone.
+- Vistoria de entrada persistida na API com o checklist de 12 itens (migração `V5__os_vistoria_checklist.sql`, coluna `os_vistorias.checklist`). `GET/PUT /ordens-servico/{numero}/vistoria` passam a incluir `checklist` (mapa item → `ok`, `atencao` ou `avaria`).
+
 ## Correção — códigos de erro HTTP
 
 - Parâmetro obrigatório ausente responde `400` (antes `500`).

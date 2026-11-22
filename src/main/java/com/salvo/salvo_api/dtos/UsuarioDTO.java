@@ -35,6 +35,12 @@ public record UsuarioDTO(
         return from(u, List.of());
     }
 
+    /** Versão para quem não é administrador: sem comissão, permissões, e-mail e telefone. */
+    public UsuarioDTO semDadosSensiveis() {
+        return new UsuarioDTO(id, nome, null, cargo, perfil, null, especialidades, lider,
+            null, corAgenda, fotoUrl, ativo, executaOs, deveTrocarSenha, dono, List.of(), criadoEm);
+    }
+
     public static UsuarioDTO from(Usuario u, List<ModuloPermissao> permissoes) {
         return new UsuarioDTO(
             u.getId(),
