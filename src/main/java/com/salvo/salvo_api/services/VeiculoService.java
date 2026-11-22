@@ -87,6 +87,9 @@ public class VeiculoService {
         Veiculo veiculo = veiculoRepository.findByIdAndOficinaIncluindoInativos(id, oficinaId)
             .orElseThrow(() -> new RecursoNaoEncontradoException("Veículo não encontrado: " + id));
 
+        if (dto.placa() != null) veiculo.setPlaca(dto.placa());
+        if (dto.marca() != null) veiculo.setMarca(dto.marca());
+        if (dto.modelo() != null) veiculo.setModelo(dto.modelo());
         if (dto.cor() != null) veiculo.setCor(dto.cor());
         if (dto.combustivel() != null) veiculo.setCombustivel(dto.combustivel());
         if (dto.motorizacao() != null) veiculo.setMotorizacao(dto.motorizacao());
@@ -95,6 +98,9 @@ public class VeiculoService {
         if (dto.versao() != null) veiculo.setVersao(dto.versao());
         if (dto.fotoUrl() != null) veiculo.setFotoUrl(dto.fotoUrl());
         if (dto.categoria() != null) veiculo.setCategoria(dto.categoria());
+        if (dto.chassi() != null) veiculo.setChassi(dto.chassi());
+        if (dto.anoFabricacao() != null) veiculo.setAnoFabricacao(dto.anoFabricacao());
+        if (dto.anoModelo() != null) veiculo.setAnoModelo(dto.anoModelo());
         if (dto.rascunho() != null) veiculo.setRascunho(dto.rascunho());
         if (dto.ativo() != null) veiculo.setAtivo(dto.ativo());
 
