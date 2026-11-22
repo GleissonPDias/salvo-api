@@ -7,13 +7,17 @@ import com.salvo.salvo_api.dtos.CriarOrcamentoItemDTO;
 import com.salvo.salvo_api.dtos.OrcamentoDTO;
 import com.salvo.salvo_api.dtos.OrcamentoItemDTO;
 import com.salvo.salvo_api.entities.Orcamento;
+import com.salvo.salvo_api.entities.Cliente;
 import com.salvo.salvo_api.entities.OrcamentoItem;
+import com.salvo.salvo_api.entities.Veiculo;
 import com.salvo.salvo_api.entities.OrdemServico;
 import com.salvo.salvo_api.entities.Oficina;
 import com.salvo.salvo_api.exceptions.RecursoNaoEncontradoException;
 import com.salvo.salvo_api.exceptions.RegraDeNegocioException;
 import com.salvo.salvo_api.entities.Usuario;
+import com.salvo.salvo_api.repositories.ClienteRepository;
 import com.salvo.salvo_api.repositories.OrcamentoRepository;
+import com.salvo.salvo_api.repositories.VeiculoRepository;
 import com.salvo.salvo_api.repositories.OrdemServicoRepository;
 import com.salvo.salvo_api.repositories.UsuarioRepository;
 import jakarta.persistence.EntityManager;
@@ -36,6 +40,8 @@ public class OrcamentoService {
         Set.of("RASCUNHO", "ENVIADO", "APROVADO", "REJEITADO", "CONVERTIDO", "CANCELADO");
 
     private final OrcamentoRepository orcamentoRepository;
+    private final ClienteRepository clienteRepository;
+    private final VeiculoRepository veiculoRepository;
     private final OrdemServicoRepository ordemServicoRepository;
     private final UsuarioRepository usuarioRepository;
     private final OficinaContexto oficinaContexto;
@@ -47,7 +53,7 @@ public class OrcamentoService {
     public List<OrcamentoDTO> listar() {
         Long oficinaId = oficinaContexto.getOficinaId();
         return orcamentoRepository.findByOficinaIdOrderByNumeroDesc(oficinaId).stream()
-            .map(o -> OrcamentoDTO.from(o, nomeCriador(o.getCriadoPor()), nomeCriador(o.getVendedorId())))
+            .map(o -> OrcamentoDTO.from(o, nomeCriador(o.getCriadoPor()), nomeCriador(o.getVendedorId()), nomeCliente(o.getClienteId()), placaVeiculo(o.getVeiculoId()), modeloVeiculo(o.getVeiculoId())))
             .toList();
     }
 
@@ -86,7 +92,7 @@ public class OrcamentoService {
         }
 
         Orcamento salvo = orcamentoRepository.save(orcamento);
-        return OrcamentoDTO.from(salvo, oficinaContexto.getUsuarioLogado().getNome(), nomeCriador(salvo.getVendedorId()));
+        return OrcamentoDTO.from(salvo, oficinaContexto.getUsuarioLogado().getNome(), nomeCriador(salvo.getVendedorId()), nomeCliente(salvo.getClienteId()), placaVeiculo(salvo.getVeiculoId()), modeloVeiculo(salvo.getVeiculoId()));
     }
 
     @Transactional
@@ -113,7 +119,7 @@ public class OrcamentoService {
         }
 
         Orcamento salvo = orcamentoRepository.save(orcamento);
-        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()), nomeCriador(salvo.getVendedorId()));
+        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()), nomeCriador(salvo.getVendedorId()), nomeCliente(salvo.getClienteId()), placaVeiculo(salvo.getVeiculoId()), modeloVeiculo(salvo.getVeiculoId()));
     }
 
     @Transactional
@@ -186,6 +192,21 @@ public class OrcamentoService {
         item.setValorUnitario(dto.valorUnitario());
         item.setTempoEstimadoHoras(dto.tempoEstimadoHoras());
         return item;
+    }
+
+    private String nomeCliente(Long clienteId) {
+        if (clienteId == null) return null;
+        return clienteRepository.findById(clienteId).map(Cliente::getNome).orElse(null);
+    }
+
+    private String placaVeiculo(Long veiculoId) {
+        if (veiculoId == null) return null;
+        return veiculoRepository.findById(veiculoId).map(Veiculo::getPlaca).orElse(null);
+    }
+
+    private String modeloVeiculo(Long veiculoId) {
+        if (veiculoId == null) return null;
+        return veiculoRepository.findById(veiculoId).map(Veiculo::getModelo).orElse(null);
     }
 
     private String nomeCriador(Long usuarioId) {

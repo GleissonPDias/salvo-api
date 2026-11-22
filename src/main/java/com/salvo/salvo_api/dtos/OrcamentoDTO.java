@@ -13,6 +13,9 @@ public record OrcamentoDTO(
     Integer numero,
     Long clienteId,
     Long veiculoId,
+    String clienteNome,
+    String veiculoPlaca,
+    String veiculoModelo,
     Long criadoPor,
     String criadoPorNome,
     Long vendedorId,
@@ -36,19 +39,26 @@ public record OrcamentoDTO(
     List<OrcamentoItemDTO> itens
 ) {
     public static OrcamentoDTO from(Orcamento o) {
-        return from(o, null, null);
+        return from(o, null, null, null, null, null);
     }
 
     public static OrcamentoDTO from(Orcamento o, String criadoPorNome) {
-        return from(o, criadoPorNome, null);
+        return from(o, criadoPorNome, null, null, null, null);
     }
 
     public static OrcamentoDTO from(Orcamento o, String criadoPorNome, String vendedorNome) {
+        return from(o, criadoPorNome, vendedorNome, null, null, null);
+    }
+
+    public static OrcamentoDTO from(Orcamento o, String criadoPorNome, String vendedorNome, String clienteNome, String veiculoPlaca, String veiculoModelo) {
         return new OrcamentoDTO(
             o.getId(),
             o.getNumero(),
             o.getClienteId(),
             o.getVeiculoId(),
+            clienteNome,
+            veiculoPlaca,
+            veiculoModelo,
             o.getCriadoPor(),
             criadoPorNome,
             o.getVendedorId(),
