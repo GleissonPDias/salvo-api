@@ -71,7 +71,8 @@ public class GlobalExceptionHandler {
 
     private ErroDTO montarErroIntegridade(DataIntegrityViolationException ex) {
         String causa = ex.getMostSpecificCause().getMessage();
-        if (causa != null && causa.contains("ux_clientes_oficina_cpf_cnpj")) {
+        if (causa != null && (causa.contains("ux_clientes_oficina_cpf_cnpj")
+                || causa.contains("clientes_oficina_id_cpf_cnpj_key"))) {
             return new ErroDTO("CONFLITO", "CPF/CNPJ já cadastrado nesta oficina");
         }
         if (causa != null && (causa.contains("veiculos_placa_key")

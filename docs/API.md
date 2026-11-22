@@ -71,6 +71,8 @@ Resposta:
 
 `DELETE /clientes/{id}`, `DELETE /veiculos/{id}`, `DELETE /servicos/{id}` e `DELETE /pecas/{id}` **desativam** (`ativo=false`) o registro, preservando histórico. Retornam `204 No Content`.
 
+Para reativar, envie `PUT /veiculos/{id}` com `{"ativo": true}` (ou `PUT /clientes/{id}` com `ativo`). `GET /veiculos?incluirInativos=true` lista também os inativos.
+
 ---
 
 ## Autenticação

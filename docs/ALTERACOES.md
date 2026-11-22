@@ -18,6 +18,10 @@ O módulo de notificações permanece disponível no back-end, mas o sino está 
 
 ---
 
+## Correção — CPF/CNPJ duplicado
+
+- Violação da constraint `clientes_oficina_id_cpf_cnpj_key` agora responde `409 CONFLITO` com "CPF/CNPJ já cadastrado nesta oficina".
+
 ## Veículos inativos e reativação
 
 - `DELETE /veiculos/{id}` inativa (exclusão lógica); OS e orçamentos mantêm placa, modelo e cliente.

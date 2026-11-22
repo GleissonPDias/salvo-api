@@ -249,7 +249,7 @@ Referência completa, com corpos de requisição e resposta em [docs/API.md](doc
 | --- | --- | --- |
 | Auth | `/auth` | Login, cadastro de oficina e usuário logado |
 | Clientes | `/clientes` | CRUD com paginação e busca; exclusão lógica |
-| Veículos | `/veiculos`, `/clientes/{id}/veiculos` | CRUD por oficina; exclusão lógica |
+| Veículos | `/veiculos`, `/clientes/{id}/veiculos` | CRUD por oficina; inativação lógica (`DELETE`); `GET /veiculos?incluirInativos=true` lista os inativos; `PUT` com `ativo=true` reativa |
 | Ordens de Serviço | `/ordens-servico` | Lista paginada, detalhe por número, status, itens, histórico |
 | Catálogo | `/servicos`, `/pecas`, `/mecanicos` | Serviços, peças, peças sugeridas e equipe técnica |
 | Equipe | `/usuarios` | Cadastro e gestão de funcionários (somente `ADMIN`)
