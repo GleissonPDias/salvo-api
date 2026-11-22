@@ -40,7 +40,7 @@ public class ClienteService {
     @Transactional(readOnly = true)
     public ClienteDTO buscarPorId(Long id) {
         Long oficinaId = oficinaContexto.getOficinaId();
-        return clienteRepository.findByOficinaIdAndId(oficinaId, id)
+        return clienteRepository.findByOficinaIdAndIdAndAtivoTrue(oficinaId, id)
             .map(c -> ClienteDTO.from(c, ordemServicoRepository.countConcluidasByClienteId(c.getId())))
             .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado: " + id));
     }

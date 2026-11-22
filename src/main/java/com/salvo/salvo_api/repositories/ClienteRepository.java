@@ -15,8 +15,11 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     @Query("SELECT COALESCE(MAX(c.numero), 0) FROM Cliente c WHERE c.oficina.id = :oficinaId")
     Integer maxNumero(@Param("oficinaId") Long oficinaId);
 
-    @Query("SELECT c FROM Cliente c WHERE c.oficina.id = :oficinaId AND c.id = :id AND c.ativo = true")
+    @Query("SELECT c FROM Cliente c WHERE c.oficina.id = :oficinaId AND c.id = :id")
     Optional<Cliente> findByOficinaIdAndId(Long oficinaId, Long id);
+
+    @Query("SELECT c FROM Cliente c WHERE c.oficina.id = :oficinaId AND c.id = :id AND c.ativo = true")
+    Optional<Cliente> findByOficinaIdAndIdAndAtivoTrue(Long oficinaId, Long id);
 
     @Query("SELECT c FROM Cliente c WHERE c.oficina.id = :oficina AND c.ativo = true AND " +
             "(LOWER(c.nome) LIKE LOWER(CONCAT('%', :q, '%')) " +
