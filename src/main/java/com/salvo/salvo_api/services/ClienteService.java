@@ -80,6 +80,7 @@ public class ClienteService {
         if (dto.whatsapp() != null) cliente.setWhatsapp(dto.whatsapp());
         if (dto.aceitaComunicacoes() != null) cliente.setAceitaComunicacoes(dto.aceitaComunicacoes());
         if (dto.observacoes() != null) cliente.setObservacoes(dto.observacoes());
+        if (dto.ativo() != null) cliente.setAtivo(dto.ativo());
 
         Cliente salvo = clienteRepository.save(cliente);
         return ClienteDTO.from(salvo, ordemServicoRepository.countConcluidasByClienteId(salvo.getId()));
