@@ -26,6 +26,9 @@ public class Veiculo {
     private Oficina oficina;
 
     @Column(nullable = false)
+    private Integer numero = 0;
+
+    @Column(nullable = false)
     private String placa;
 
     private String chassi;

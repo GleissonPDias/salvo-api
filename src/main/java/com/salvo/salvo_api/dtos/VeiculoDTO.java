@@ -4,6 +4,7 @@ import com.salvo.salvo_api.entities.Veiculo;
 
 public record VeiculoDTO(
     Long id,
+    Integer numero,
     Long clienteId,
     String clienteNome,
     Long oficinaId,
@@ -27,6 +28,7 @@ public record VeiculoDTO(
     public static VeiculoDTO from(Veiculo v) {
         return new VeiculoDTO(
             v.getId(),
+            v.getNumero(),
             v.getCliente().getId(),
             v.getCliente().getNome(),
             v.getOficina() != null ? v.getOficina().getId() : null,

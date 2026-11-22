@@ -57,6 +57,7 @@ public class VeiculoService {
         Veiculo veiculo = new Veiculo();
         veiculo.setCliente(cliente);
         veiculo.setOficina(cliente.getOficina());
+        veiculo.setNumero(veiculoRepository.maxNumero(oficinaId) + 1);
         veiculo.setPlaca(dto.placa().toUpperCase().replace("-", "").replace(" ", ""));
         veiculo.setChassi(dto.chassi());
         veiculo.setMarca(dto.marca());
@@ -73,7 +74,8 @@ public class VeiculoService {
         veiculo.setCategoria(dto.categoria());
         veiculo.setRascunho(Boolean.TRUE.equals(dto.rascunho()));
 
-        return VeiculoDTO.from(veiculoRepository.save(veiculo));
+        Veiculo salvo = veiculoRepository.save(veiculo);
+        return VeiculoDTO.from(salvo);
     }
 
     @Transactional

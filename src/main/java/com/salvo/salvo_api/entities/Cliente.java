@@ -20,6 +20,9 @@ public class Cliente {
     private Oficina oficina;
 
     @Column(nullable = false)
+    private Integer numero = 0;
+
+    @Column(nullable = false)
     private String nome;
 
     @Column(name = "cpf_cnpj", nullable = false)

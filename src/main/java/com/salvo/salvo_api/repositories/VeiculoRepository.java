@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +19,10 @@ public interface VeiculoRepository extends JpaRepository<Veiculo, Long> {
     @EntityGraph(attributePaths = {"cliente"})
     @Query("SELECT v FROM Veiculo v JOIN v.cliente c WHERE v.id = :id AND c.oficina.id = :oficina AND v.ativo = true")
     Optional<Veiculo> findByIdAndOficina(Long id, Long oficina);
+
+    @EntityGraph(attributePaths = {"cliente"})
+    @Query("SELECT COALESCE(MAX(v.numero), 0) FROM Veiculo v JOIN v.cliente c WHERE c.oficina.id = :oficina")
+    Integer maxNumero(@Param("oficina") Long oficina);
 
     @EntityGraph(attributePaths = {"cliente"})
     @Query(

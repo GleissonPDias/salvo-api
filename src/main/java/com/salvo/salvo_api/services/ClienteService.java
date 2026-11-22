@@ -51,6 +51,7 @@ public class ClienteService {
 
         Cliente cliente = new Cliente();
         cliente.setOficina(em.getReference(Oficina.class, oficinaId));
+        cliente.setNumero(clienteRepository.maxNumero(oficinaId) + 1);
         cliente.setNome(dto.nome());
         cliente.setCpfCnpj(dto.cpfCnpj());
         cliente.setEmail(dto.email());

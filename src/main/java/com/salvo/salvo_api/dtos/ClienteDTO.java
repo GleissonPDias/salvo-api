@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 
 public record ClienteDTO(
     Long id,
+    Integer numero,
     String nome,
     String cpfCnpj,
     String email,
@@ -24,7 +25,7 @@ public record ClienteDTO(
 
     public static ClienteDTO from(Cliente c, long ordensConcluidas) {
         return new ClienteDTO(
-            c.getId(), c.getNome(), c.getCpfCnpj(),
+            c.getId(), c.getNumero(), c.getNome(), c.getCpfCnpj(),
             c.getEmail(), c.getTelefone(), c.getTelefoneSecundario(),
             c.getClassificacao(), c.getWhatsapp(), c.getAceitaComunicacoes(),
             c.getObservacoes(), c.getAtivo(), c.getCriadoEm(),
