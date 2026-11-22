@@ -15,14 +15,20 @@ public record ClienteDTO(
     Boolean aceitaComunicacoes,
     String observacoes,
     Boolean ativo,
-    OffsetDateTime criadoEm
+    OffsetDateTime criadoEm,
+    Long ordensConcluidas
 ) {
     public static ClienteDTO from(Cliente c) {
+        return from(c, 0L);
+    }
+
+    public static ClienteDTO from(Cliente c, long ordensConcluidas) {
         return new ClienteDTO(
             c.getId(), c.getNome(), c.getCpfCnpj(),
             c.getEmail(), c.getTelefone(), c.getTelefoneSecundario(),
             c.getClassificacao(), c.getWhatsapp(), c.getAceitaComunicacoes(),
-            c.getObservacoes(), c.getAtivo(), c.getCriadoEm()
+            c.getObservacoes(), c.getAtivo(), c.getCriadoEm(),
+            ordensConcluidas
         );
     }
 }

@@ -8,6 +8,7 @@ import com.salvo.salvo_api.entities.Cliente;
 import com.salvo.salvo_api.entities.Oficina;
 import com.salvo.salvo_api.exceptions.RecursoNaoEncontradoException;
 import com.salvo.salvo_api.repositories.ClienteRepository;
+import com.salvo.salvo_api.repositories.OrdemServicoRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
+    private final OrdemServicoRepository ordemServicoRepository;
     private final OficinaContexto oficinaContexto;
 
     @PersistenceContext
@@ -30,16 +32,16 @@ public class ClienteService {
     public Page<ClienteDTO> listar(String q, Pageable pageable) {
         Long oficinaId = oficinaContexto.getOficinaId();
         if (q != null && !q.isBlank()) {
-            return clienteRepository.buscar(oficinaId, q.trim(), pageable).map(ClienteDTO::from);
+            return clienteRepository.buscar(oficinaId, q.trim(), pageable).map(c -> ClienteDTO.from(c, ordemServicoRepository.countConcluidasByClienteId(c.getId())));
         }
-        return clienteRepository.findByOficinaIdAndAtivoTrue(oficinaId, pageable).map(ClienteDTO::from);
+        return clienteRepository.findByOficinaIdAndAtivoTrue(oficinaId, pageable).map(c -> ClienteDTO.from(c, ordemServicoRepository.countConcluidasByClienteId(c.getId())));
     }
 
     @Transactional(readOnly = true)
     public ClienteDTO buscarPorId(Long id) {
         Long oficinaId = oficinaContexto.getOficinaId();
         return clienteRepository.findByOficinaIdAndId(oficinaId, id)
-            .map(ClienteDTO::from)
+            .map(c -> ClienteDTO.from(c, ordemServicoRepository.countConcluidasByClienteId(c.getId())))
             .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado: " + id));
     }
 
@@ -59,7 +61,8 @@ public class ClienteService {
         cliente.setAceitaComunicacoes(Boolean.TRUE.equals(dto.aceitaComunicacoes()));
         cliente.setObservacoes(dto.observacoes());
 
-        return ClienteDTO.from(clienteRepository.save(cliente));
+        Cliente salvo = clienteRepository.save(cliente);
+        return ClienteDTO.from(salvo, 0L);
     }
 
     @Transactional
@@ -77,7 +80,8 @@ public class ClienteService {
         if (dto.aceitaComunicacoes() != null) cliente.setAceitaComunicacoes(dto.aceitaComunicacoes());
         if (dto.observacoes() != null) cliente.setObservacoes(dto.observacoes());
 
-        return ClienteDTO.from(clienteRepository.save(cliente));
+        Cliente salvo = clienteRepository.save(cliente);
+        return ClienteDTO.from(salvo, ordemServicoRepository.countConcluidasByClienteId(salvo.getId()));
     }
 
     @Transactional

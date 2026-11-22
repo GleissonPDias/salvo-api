@@ -6,16 +6,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
 public interface OrdemServicoRepository extends JpaRepository<OrdemServico, Long> {
 
-    // As coleções servicos/pecas são carregadas sob demanda dentro da transação.
-    // Fazer fetch join das duas ao mesmo tempo causa MultipleBagFetchException,
-    // pois ambas são List (bag) na entidade OrdemServico.
     @EntityGraph(attributePaths = {"cliente", "veiculo", "status"})
     Optional<OrdemServico> findByOficinaIdAndNumero(Long oficinaId, Integer numero);
+
+    @EntityGraph(attributePaths = {"cliente", "veiculo", "status"})
+    @Query("SELECT COUNT(o) FROM OrdemServico o WHERE o.cliente.id = :clienteId AND o.status.nome IN ('ENTREGUE', 'CONCLUIDA')")
+    long countConcluidasByClienteId(@Param("clienteId") Long clienteId);
 
     @EntityGraph(attributePaths = {"cliente", "veiculo", "status"})
     Page<OrdemServico> findByOficinaIdOrderByNumeroDesc(Long oficinaId, Pageable pageable);
