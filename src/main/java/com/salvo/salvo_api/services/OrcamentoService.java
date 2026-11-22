@@ -60,7 +60,7 @@ public class OrcamentoService {
     @Transactional(readOnly = true)
     public OrcamentoDTO buscar(Long id) {
         Orcamento o = exigir(id);
-        return OrcamentoDTO.from(o, nomeCriador(o.getCriadoPor()), nomeCriador(o.getVendedorId()));
+        return OrcamentoDTO.from(o, nomeCriador(o.getCriadoPor()), nomeCriador(o.getVendedorId()), nomeCliente(o.getClienteId()), placaVeiculo(o.getVeiculoId()), modeloVeiculo(o.getVeiculoId()));
     }
 
     @Transactional
@@ -144,7 +144,7 @@ public class OrcamentoService {
             if (canal != null && !canal.isBlank()) orcamento.setCanalEnvio(canal.trim());
         }
         Orcamento salvo = orcamentoRepository.save(orcamento);
-        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()), nomeCriador(salvo.getVendedorId()));
+        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()), nomeCriador(salvo.getVendedorId()), nomeCliente(salvo.getClienteId()), placaVeiculo(salvo.getVeiculoId()), modeloVeiculo(salvo.getVeiculoId()));
     }
 
     @Transactional
@@ -163,7 +163,7 @@ public class OrcamentoService {
         orcamento.setOrdemServicoId(ordem.getId());
         orcamento.setStatus("CONVERTIDO");
         Orcamento salvo = orcamentoRepository.save(orcamento);
-        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()), nomeCriador(salvo.getVendedorId()));
+        return OrcamentoDTO.from(salvo, nomeCriador(salvo.getCriadoPor()), nomeCriador(salvo.getVendedorId()), nomeCliente(salvo.getClienteId()), placaVeiculo(salvo.getVeiculoId()), modeloVeiculo(salvo.getVeiculoId()));
     }
 
     private String normalizarStatus(String status) {
